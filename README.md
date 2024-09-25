@@ -12,7 +12,7 @@ rest.
 
 ```bash
 git clone https://github.com/engeir/gpu-deconv
-cd gpu-deconv || exit 0
+cd gpu-deconv || exit
 pixi install
 ```
 
