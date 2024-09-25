@@ -1,15 +1,15 @@
 name: default
 channels:
-- conda-forge
-- rapidsai
-- nvidia
+  - conda-forge
+  - rapidsai
+  - nvidia
 dependencies:
-- ruff *
-- python 3.10.*
-- cupy >=10,<11
-- cudatoolkit >=11.8.0,<12
-- pip
-- pip:
-  - numpy<2
-  - fppanalysis @ git+https://github.com/uit-cosmo/fpp-analysis-tools
-  - superposed-pulses @ git+https://github.com/uit-cosmo/superposed-pulses
+  - ruff *
+  - python 3.10.*
+  - cupy >=10,<11
+  - cudatoolkit >=11.8.0,<12
+  - pip
+  - pip:
+      - numpy<2
+      - fppanalysis @ git+https://github.com/uit-cosmo/fpp-analysis-tools
+      - superposed-pulses @ git+https://github.com/uit-cosmo/superposed-pulses

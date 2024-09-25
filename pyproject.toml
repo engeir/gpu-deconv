@@ -4,6 +4,9 @@ description = "Sandbox where we run GPU deconvolution stuff."
 version = "0.1.0"
 requires-python = ">=3.10"
 
+[project.optional-dependencies]
+dev = ["pre-commit>=3.8.0,<4", "pre-commit-hooks>=4.6.0,<5"]
+
 [tool.pixi.dependencies]
 python = "3.10.*"
 cupy = ">=10,<11"
@@ -18,44 +21,13 @@ fppanalysis = { git = "https://github.com/uit-cosmo/fpp-analysis-tools" }
 superposed-pulses = { git = "https://github.com/uit-cosmo/superposed-pulses" }
 
 [tool.pixi.tasks]
-all = { depends-on = [
-  "script1",
-  "script2",
-  "script3",
-  "script4",
-  "script5",
-  "script6",
-] }
-script1 = { cmd = "python ./src/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/constant_noise_downsample_signal.py",
-], outputs = [
-  "assets/constant_noise_downsample_signal",
-] }
-script2 = { cmd = "python ./src/fourier_no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/fourier_no_noise_downsample_forcing.py",
-], outputs = [
-  "assets/no_noise_downsampled_forcing",
-] }
-script3 = { cmd = "python ./src/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/fourier_noise_downsample_signal.py",
-], outputs = [
-  "assets/fourier_noise_downsampled_signal",
-] }
-script4 = { cmd = "python ./src/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/no_noise_downsample_forcing.py",
-], outputs = [
-  "assets/no_noise_downsampled_forcing",
-] }
-script5 = { cmd = "python ./src/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/noise_downsample_forcing.py",
-], outputs = [
-  "assets/noise",
-] }
-script6 = { cmd = "python ./src/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/noise_downsample_signal.py",
-], outputs = [
-  "assets/noise_downsampled_signal_init",
-] }
+all = { depends-on = ["script1", "script2", "script3", "script4", "script5", "script6"] }
+script1 = { cmd = "python ./src/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/constant_noise_downsample_signal.py"], outputs = ["assets/constant_noise_downsample_signal"] }
+script2 = { cmd = "python ./src/fourier_no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/fourier_no_noise_downsample_forcing.py"], outputs = ["assets/no_noise_downsampled_forcing"] }
+script3 = { cmd = "python ./src/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/fourier_noise_downsample_signal.py"], outputs = ["assets/fourier_noise_downsampled_signal"] }
+script4 = { cmd = "python ./src/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/no_noise_downsample_forcing.py"], outputs = ["assets/no_noise_downsampled_forcing"] }
+script5 = { cmd = "python ./src/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/noise_downsample_forcing.py"], outputs = ["assets/noise"] }
+script6 = { cmd = "python ./src/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/noise_downsample_signal.py"], outputs = ["assets/noise_downsampled_signal_init"] }
 
 [tool.pixi.feature.dev.dependencies]
 ruff = "*"
@@ -115,10 +87,10 @@ fixable = ["ALL"]
 ignore = [
   "CPY001",
   "COM812",
-  "E501",   # Line too long
+  "E501", # Line too long
   "ERA001", # Uncommented code
   "ISC001",
-  "T201",   # `print` found
+  "T201", # `print` found
 ]
 per-file-ignores = {}
 select = [

@@ -2,7 +2,7 @@
 
 ## What
 
-This repo contain experiments investigating how a deconvoultion method performs on data
+This repo contain experiments investigating how a deconvolution method performs on data
 relevant for climate simulation output.
 
 ## Install

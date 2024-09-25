@@ -1,0 +1,27 @@
+{
+  "$schema": "https://dprint.dev/schemas/v0.json",
+  "incremental": true,
+  "json": {
+    "indentWidth": 2,
+    "associations": ["**/*.avsc"]
+  },
+  "markdown": {
+    "lineWidth": 88,
+    "textWrap": "always"
+  },
+  "toml": {},
+  "ruff": {
+    "lineLength": 88,
+    "indentWidth": 4,
+    "preview": true
+  },
+  "jupyter": {},
+  "excludes": ["**/*-lock.json"],
+  "plugins": [
+    "https://plugins.dprint.dev/json-0.19.3.wasm",
+    "https://plugins.dprint.dev/markdown-0.17.8.wasm",
+    "https://plugins.dprint.dev/toml-0.6.2.wasm",
+    "https://plugins.dprint.dev/ruff-0.3.9.wasm",
+    "https://plugins.dprint.dev/jupyter-0.1.4.wasm"
+  ]
+}

@@ -1,0 +1,32 @@
+# .pre-commit-config.yaml
+# See https://pre-commit.com/ for usage and config
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+        args: [--maxkb=500]
+  - repo: local
+    hooks:
+      # - id: update-nvim
+      #   name: Update nvim README
+      #   language: script
+      #   pass_filenames: false
+      #   entry: .update-nvim
+      - id: dprint
+        name: dprint
+        entry: dprint fmt --incremental=true --allow-no-files
+        language: node
+        pass_filenames: false
+        additional_dependencies: ["dprint"]
+# Exclude files that are generated
+exclude: |
+  (?x)(
+    ^environment.yml|
+    ^pixi.lock|
+  )
