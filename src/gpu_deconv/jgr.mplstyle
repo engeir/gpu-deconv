@@ -1,0 +1,5 @@
+# See https://www.agu.org/publish-with-agu/publish/author-resources/graphic-requirements
+font.family: "serif"
+font.serif: "Times New Roman"
+savefig.format: pdf
+savefig.dpi: 300

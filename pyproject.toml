@@ -1,8 +1,9 @@
 [project]
-name = "project"
+name = "gpu-deconv"
 description = "Sandbox where we run GPU deconvolution stuff."
 version = "0.1.0"
 requires-python = ">=3.10"
+dependencies = ["xarray>=2024.9.0,<2025", "matplotlib>=3.9,<4", "numpy<2"]
 
 [project.optional-dependencies]
 dev = ["pre-commit>=3.8.0,<4", "pre-commit-hooks>=4.6.0,<5"]
@@ -11,23 +12,50 @@ dev = ["pre-commit>=3.8.0,<4", "pre-commit-hooks>=4.6.0,<5"]
 python = "3.10.*"
 cupy = ">=10,<11"
 cudatoolkit = ">=11.8.0,<12"
+netcdf4 = ">=1.7.1,<2"
+icecream = ">=2.1.3,<3"
 
 [tool.pixi.project]
 channels = ["conda-forge", "rapidsai", "nvidia"]
 platforms = ["linux-64"]
 [tool.pixi.pypi-dependencies]
-numpy = "<2"
 fppanalysis = { git = "https://github.com/uit-cosmo/fpp-analysis-tools" }
 superposed-pulses = { git = "https://github.com/uit-cosmo/superposed-pulses" }
+gpu-deconv = { path = ".", editable = true }
 
 [tool.pixi.tasks]
-all = { depends-on = ["script1", "script2", "script3", "script4", "script5", "script6"] }
-script1 = { cmd = "python ./src/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/constant_noise_downsample_signal.py"], outputs = ["assets/constant_noise_downsample_signal"] }
-script2 = { cmd = "python ./src/fourier_no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/fourier_no_noise_downsample_forcing.py"], outputs = ["assets/no_noise_downsampled_forcing"] }
-script3 = { cmd = "python ./src/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/fourier_noise_downsample_signal.py"], outputs = ["assets/fourier_noise_downsampled_signal"] }
-script4 = { cmd = "python ./src/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/no_noise_downsample_forcing.py"], outputs = ["assets/no_noise_downsampled_forcing"] }
-script5 = { cmd = "python ./src/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/noise_downsample_forcing.py"], outputs = ["assets/noise"] }
-script6 = { cmd = "python ./src/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/noise_downsample_signal.py"], outputs = ["assets/noise_downsampled_signal_init"] }
+all = { depends-on = [
+  "script1",
+  "script2",
+  "script3",
+  "script4",
+  "script5",
+] }
+script1 = { cmd = "python ./src/gpu_deconv/generate/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
+  "src/gpu_deconv/generate/constant_noise_downsample_signal.py",
+], outputs = [
+  "assets/constant_noise_downsampled_signal",
+] }
+script2 = { cmd = "python ./src/gpu_deconv/generate/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
+  "src/gpu_deconv/generate/fourier_noise_downsample_signal.py",
+], outputs = [
+  "assets/fourier_noise_downsampled_signal",
+] }
+script3 = { cmd = "python ./src/gpu_deconv/generate/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
+  "src/gpu_deconv/generate/no_noise_downsample_forcing.py",
+], outputs = [
+  "assets/no_noise_downsampled_forcing",
+] }
+script4 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
+  "src/gpu_deconv/generate/noise_downsample_forcing.py",
+], outputs = [
+  "assets/noise_downsampled_forcing",
+] }
+script5 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
+  "src/gpu_deconv/generate/noise_downsample_signal.py",
+], outputs = [
+  "assets/noise_downsampled_signal",
+] }
 
 [tool.pixi.feature.dev.dependencies]
 ruff = "*"
@@ -65,8 +93,8 @@ exclude = [
 extend-exclude = []
 # Same as Black.
 line-length = 88
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.10
+target-version = "py310"
 
 [tool.ruff.format]
 preview = false
@@ -79,18 +107,18 @@ preview = false
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# Enable Pyflakes (`F`) and a subset of the Pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable Pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 # select = ["E4", "E7", "E9", "F"]  # These are the default
 # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
 ignore = [
   "CPY001",
   "COM812",
-  "E501", # Line too long
+  "E501",   # Line too long
   "ERA001", # Uncommented code
   "ISC001",
-  "T201", # `print` found
+  "T201",   # `print` found
 ]
 per-file-ignores = {}
 select = [
@@ -113,7 +141,7 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.isort]
 case-sensitive = true
-known-local-folder = ["src", "vdd"]
+known-local-folder = ["src", "gpu_deconv"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

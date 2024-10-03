@@ -13,7 +13,7 @@ seedTW = 10
 seedA = 2
 
 dt_signal = 0.01
-dt_forcing = 0.1
+dt_forcing = 0.01
 
 K = 71
 gamma = 0.9
@@ -21,7 +21,7 @@ N = int(K / (gamma * dt_signal))
 
 # K = int(N*gamma*dt_signal)
 
-savedata = pathlib.Path().cwd() / "assets" / "noise"
+savedata = pathlib.Path().cwd() / "assets" / "noise_downsampled_signal"
 savedata.mkdir(parents=False, exist_ok=True)
 
 
@@ -51,13 +51,7 @@ for eps in eps_list:
             ta = ta[:-1]
             print("A and ta data is now odd")
 
-        if len(S_a) % 2 == 0:
-            S_a = S_a[:-1]
-            S_d = S_d[:-1]
-            print("noise data now odd")
-
-        # Calculate forcing with the same sampling as signal
-
+        # Here, the forcing has a higher sampling than the signal.
         A = np.array(A)
         ta = np.array(ta)
         ta_index = np.ceil(ta / dt_signal).astype(int)
@@ -65,26 +59,48 @@ for eps in eps_list:
         for i in range(ta_index.size):
             forcing_original[ta_index[i]] += A[i]
 
-        forcing_downsampled = np.zeros(T.size)
+        S_add_downsampled = np.zeros(T.size)
+        S_dyn_downsampled = np.zeros(T.size)
 
         # Calculate the number of original samples per new sample
-        samples_per_new_interval = int(dt_forcing / dt_signal)
+        samples_per_new_interval = 10
 
         # Perform the downsampling by copying values and zero-padding
         for i in range(0, T.size, samples_per_new_interval):
             if i < T.size:
-                forcing_downsampled[i] = forcing_original[i]
+                S_add_downsampled[i] = S_a[i]
+                S_dyn_downsampled[i] = S_d[i]
 
-        forcing_downsampled = cp.asarray(forcing_downsampled)
+        if len(S_add_downsampled) % 2 == 0:
+            S_add_downsampled = S_add_downsampled[:-1]
+            S_dyn_downsampled = S_dyn_downsampled[:-1]
+            print("noise data now odd")
 
-        S_a = cp.array(S_a)
-        S_d = cp.array(S_d)
+        S_add_downsampled = cp.array(S_add_downsampled)
+        S_dyn_downsampled = cp.array(S_dyn_downsampled)
+        forcing_original = cp.array(forcing_original)
+
+        tsize = 2**10
+        tkern = np.arange(-tsize, tsize + 1) * dt_signal
+        # kern = gsn.kern(tkern, kerntype="1-exp")
+
+        init = np.zeros(tkern.size)
+        init[tsize - 2**8 : tsize + 2**8 + 1] = np.ones(2**9 + 1)
+        init = cp.array(init)
 
         res_a, err_a = dec.RL_gauss_deconvolve(
-            signal=S_a, kern=forcing_downsampled, iteration_list=iterlist, gpu=True
+            signal=S_add_downsampled[: 2**11 + 1],
+            kern=forcing_original[: 2**11 + 1],
+            initial_guess=init,
+            iteration_list=iterlist,
+            gpu=True,
         )
         res_d, err_d = dec.RL_gauss_deconvolve(
-            signal=S_d, kern=forcing_downsampled, iteration_list=iterlist, gpu=True
+            signal=S_dyn_downsampled[: 2**11 + 1],
+            kern=forcing_original[: 2**11 + 1],
+            initial_guess=init,
+            iteration_list=iterlist,
+            gpu=True,
         )
 
         print(f"deconv done for eps={eps}")
@@ -96,10 +112,11 @@ for eps in eps_list:
             time=T,
             signal_dyn=S_d,
             signal_add=S_a,
+            signal_add_downsampled=S_add_downsampled,
+            signal_dyn_downsampled=S_dyn_downsampled,
             amplitude=A,
             arrival_time=ta,
             forcing_original=forcing_original,
-            forcing_downsampled=forcing_downsampled,
             result_add=res_a,
             error_add=err_a,
             result_dyn=res_d,
