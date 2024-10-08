@@ -78,10 +78,16 @@ for eps in eps_list:
         utils.verify_odd_length(signal_add_downsampled_upsampled)
         utils.verify_odd_length(signal_dyn_downsampled_upsampled)
         ds["signal_additive_downsampled_upsampled"] = utils.Wardrobe.dress_an_upsampled(
-            "Signal", signal_add_downsampled_upsampled, time_array
+            "Signal",
+            signal_add_downsampled_upsampled,
+            time_array,
+            factor=downsample_factor,
         )
         ds["signal_dynamic_downsampled_upsampled"] = utils.Wardrobe.dress_an_upsampled(
-            "Signal", signal_dyn_downsampled_upsampled, time_array
+            "Signal",
+            signal_dyn_downsampled_upsampled,
+            time_array,
+            factor=downsample_factor,
         )
 
         signal_add_downsampled_upsampled = cp.array(signal_add_downsampled_upsampled)

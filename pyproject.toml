@@ -3,7 +3,7 @@ name = "gpu-deconv"
 description = "Sandbox where we run GPU deconvolution stuff."
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["xarray>=2024.9.0,<2025", "matplotlib>=3.9,<4", "numpy<2"]
+dependencies = ["xarray>=2024.9.0,<2025", "matplotlib>=3.9,<4", "numpy<2", "plastik>=0.7.2,<0.8"]
 
 [project.optional-dependencies]
 dev = ["pre-commit>=3.8.0,<4", "pre-commit-hooks>=4.6.0,<5"]

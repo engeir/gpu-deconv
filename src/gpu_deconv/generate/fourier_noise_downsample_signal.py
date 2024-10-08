@@ -73,7 +73,7 @@ for epsilon in epsilon_list:
                 "time_sparse": (
                     "time_array",
                     time_array.data[::downsample_factor],
-                    {"long_name": "Time", "units": "yr"},
+                    {"long_name": "Time", "units": r"$\tau_d$"},
                 )
             },
         )

@@ -1,6 +1,8 @@
 """Generic functions used across the project."""
 
+import fractions
 import pathlib
+from collections.abc import Generator
 from typing import Literal
 
 import numpy as np
@@ -19,6 +21,11 @@ def find_repo_root(path: pathlib.Path | str) -> pathlib.Path:
 
 
 ASSETS = find_repo_root(__file__) / "assets"
+
+
+def all_files(directory: str) -> Generator[pathlib.Path]:
+    """List all asset files in the given directory."""
+    return (ASSETS / directory).glob("*nc")
 
 
 class EvenLengthError(Exception):
@@ -132,6 +139,8 @@ class TimeSeriesModel:
             total_duration=self._total_pulses / self._gamma,
             dt=self._dt,
         )
+        if not len(self._model._times) % 2:
+            self._model._times = self._model._times[:-1]
         time_array, signal = self._model.make_realization()
         self._forcing_model = self._model.get_last_used_forcing()
         time_array = self._make_odd_length(time_array)
@@ -143,6 +152,20 @@ class TimeSeriesModel:
         arrival_time_index = np.ceil(arrival_times / self._dt).astype(int)
         for i in range(arrival_time_index.size):
             forcing[arrival_time_index[i]] += amplitude[i]
+        pulse_params = self._forcing_model.get_pulse_parameters(1)
+        pulse_shape = self._model._pulse_generator.get_pulse(
+            self._model._times - pulse_params.arrival_time, pulse_params.duration
+        )
+        pulse_max = np.argmax(pulse_shape)
+        half = len(pulse_shape) // 2
+        roll = half - pulse_max
+        pulse_shape = np.roll(pulse_shape, roll)
+        tau = time_array
+        if tau[0] != -tau[-1]:
+            mid = len(tau) // 2
+            tau = tau - tau[mid]
+        if tau[0] != -tau[-1]:
+            raise TauError(arr=tau)
         self.ds = xr.Dataset(
             data_vars={
                 "signal": (
@@ -166,13 +189,22 @@ class TimeSeriesModel:
                         "long_name": "Amplitude",
                     },
                 ),
+                "pulse_shape": (
+                    "tau",
+                    pulse_shape,
+                    {
+                        "description": "The original shape of the response pulse",
+                        "long_name": "Response pulse",
+                    },
+                ),
             },
             coords={
-                "time": ("time", time_array, {"long_name": "Time", "units": "yr"}),
+                "time": ("time", time_array, {"long_name": "Time", "units": r"$\tau_d$"}),
+                "tau": ("tau", tau, {"long_name": "Time lag", "units": r"$\tau_d$"}),
                 "arrival_time": (
                     "arrival_time",
                     arrival_times,
-                    {"long_name": "Time", "units": "yr"},
+                    {"long_name": "Time", "units": r"$\tau_d$"},
                 ),
             },
             attrs={
@@ -228,10 +260,13 @@ class Wardrobe:
             data,
             dims=["tau", "iterlist"],
             coords={
-                "tau": ("tau", tau, {"long_name": "Time lag", "units": "yr"}),
+                "tau": ("tau", tau, {"long_name": "Time lag", "units": r"$\tau_d$"}),
                 "iterlist": ("iterlist", iterlist, {"long_name": "Total iterations"}),
             },
-            attrs={"description": "Result from deconvolution"},
+            attrs={
+                "long_name": "Response pulse",
+                "description": "Result from deconvolution",
+            },
         )
 
     @staticmethod
@@ -259,11 +294,11 @@ class Wardrobe:
         /,
         data: np.ndarray,
         time: np.ndarray,
-        factor: int,
+        ratio: fractions.Fraction,
         desc: str | None = None,
     ) -> xr.DataArray:
         """Dress an upsampled array named `name` with a time dimension."""
-        _a = {"long_name": f"{name}, dense", "upsample_factor": factor}
+        _a = {"long_name": f"{name}, dense", "sample_factor": ratio}
         if desc is not None:
             _a.update({"description": desc})
         return xr.DataArray(
@@ -279,8 +314,9 @@ class Wardrobe:
         /,
         data: np.ndarray,
         time: np.ndarray,
-        factor: int,
+        ratio: fractions.Fraction,
         desc: str | None = None,
+        **kwargs: dict | None,
     ) -> xr.DataArray:
         """Dress a downsampled array named `name` with a time dimension.
 
@@ -295,23 +331,26 @@ class Wardrobe:
             The time dimension. This can either be the same length as `data` (i.e.
             downsampled), or the original time array which will then be attempted to be
             downsampled.
-        factor : int
+        ratio : fractions.Fraction
             The downsampling factor.
         desc : str | None
             An optional description of the array.
+        **kwargs
+            If new dimensions should be used, they are specified here and passed to the
+            DataArray object.
         """
         if len(data) == len(time):
             _d = data
             _t = time
-        elif len(data) == len(time[::factor]):
+        elif len(data) == len(time[::ratio]):
             _d = data
-            _t = time[::factor]
-        elif len(data) == len(time[::factor][:-1]):
+            _t = time[::ratio]
+        elif len(data) == len(time[::ratio][:-1]):
             _d = data
-            _t = time[::factor][:-1]
+            _t = time[::ratio][:-1]
         else:
             raise UnequalArrayLengthError
-        _a = {"long_name": f"{name}, sparse", "downsample_factor": factor}
+        _a = {"long_name": f"{name}, sparse", "downsample_factor": str(ratio)}
         if desc is not None:
             _a.update({"description": desc})
         return xr.DataArray(
@@ -321,7 +360,7 @@ class Wardrobe:
                 "time_sparse": (
                     "time_sparse",
                     _t,
-                    {"long_name": "Time", "units": "yr"},
+                    {"long_name": "Time", "units": r"$\tau_d$"},
                 )
             },
             attrs=_a,
