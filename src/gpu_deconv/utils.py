@@ -147,12 +147,14 @@ class TimeSeriesModel:
         signal = self._make_odd_length(signal)
         amplitude = self._forcing_model.amplitudes
         arrival_times = self._forcing_model.arrival_times
-        arrival_times.sort()
+        idx = np.argsort(arrival_times)
+        arrival_times = arrival_times[idx]
+        amplitude = amplitude[idx]
         forcing = np.zeros(time_array.size)
         arrival_time_index = np.ceil(arrival_times / self._dt).astype(int)
         for i in range(arrival_time_index.size):
             forcing[arrival_time_index[i]] += amplitude[i]
-        pulse_params = self._forcing_model.get_pulse_parameters(1)
+        pulse_params = self._forcing_model.get_pulse_parameters(0)
         pulse_shape = self._model._pulse_generator.get_pulse(  # noqa: SLF001
             self._model._times - pulse_params.arrival_time,  # noqa: SLF001
             pulse_params.duration,
