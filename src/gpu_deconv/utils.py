@@ -341,6 +341,16 @@ class Wardrobe:
             The downsampling factor.
         desc : str | None
             An optional description of the array.
+
+        Returns
+        -------
+        xr.DataArray
+            A data array with all the necessary coordinates and attributes.
+
+        Raises
+        ------
+        UnequalArrayLengthError
+            If the data array and the time array have incompatible lengths.
         """
         if len(data) == len(time):
             _d = data
@@ -369,3 +379,140 @@ class Wardrobe:
             },
             attrs=_a,
         )
+
+
+class SampleStrategyForcing:
+    """Container class specifying different ways of down- and up-sampling an array."""
+
+    def __init__(self, array: xr.DataArray) -> None:
+        self.arr = array.copy()
+        self._arr = array.copy()
+
+    def _check_da_dims(
+        self, arr: xr.DataArray, new_dim: str, new_coord: float
+    ) -> xr.DataArray:
+        if new_dim not in self.arr.dims:
+            self.arr = self.arr.expand_dims(dim={new_dim: [0]})
+        return arr.expand_dims(dim={new_dim: [new_coord]})
+
+    def _create_corresponding_upsampled(
+        self, arr: np.ndarray, times: np.ndarray, ratio: fractions.Fraction
+    ) -> None:
+        da = Wardrobe.dress_an_upsampled(
+            "Forcing",
+            arr,
+            times,
+            ratio,
+            desc="Forcing with the same length, but downsampled to keep every `n` sample.",
+        )
+        new_dim = "sample_ratio"
+        da = self._check_da_dims(da, new_dim, float(ratio))
+        self.arr = xr.concat((self.arr, da), dim=new_dim)
+
+    @staticmethod
+    def _sample_at_ratio(
+        orig_arr: np.ndarray, orig_time: np.ndarray, ratio: fractions.Fraction
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Sample an array at a given ratio.
+
+        Parameters
+        ----------
+        orig_arr : np.ndarray
+            The input array that should be downsampled.
+        orig_time : np.ndarray
+            The time axis of the input array that should be downsampled.
+        ratio : fractions.Fraction
+            The ratio of the downsampling to original array.
+
+        Returns
+        -------
+        np.ndarray
+            The downsampled input array.
+        np.ndarray
+            The time axis of the downsampled input array.
+        np.ndarray
+            The upsampling of the input array with equal size to the input array.
+        """
+
+        def _reshape(arr: np.ndarray, ratio: fractions.Fraction) -> np.ndarray:
+            rows = int(np.ceil(len(arr) / ratio.denominator))
+            return np.pad(
+                arr.astype(float),
+                (0, ratio.denominator * rows - arr.size),
+                mode="constant",
+                constant_values=np.nan,
+            ).reshape(rows, ratio.denominator)
+
+        # Re-shape the array with column lengths equal to `denominator`, and pad with
+        # NaN if it does not fit.
+        # Keep only the first `numerator` number of columns in each row.
+        reshaped = _reshape(orig_arr, ratio)
+        frc = reshaped[:, : ratio.numerator].flatten()
+        frc_time = _reshape(orig_time, ratio)[:, : ratio.numerator].flatten()
+        if not len(frc) % 2:
+            frc = frc[:-1]
+            frc_time = frc_time[:-1]
+        verify_odd_length(frc)
+        return frc, frc_time, reshaped
+
+    def keep_every_ratio_blind(
+        self, ratio: fractions.Fraction
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing."""
+        if ratio >= 1:
+            raise ValueError
+        _a = self._arr.data
+        _t = self._arr.time.data
+        # First, reshape so that the length of a row is `ratio.denominator`
+        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        # The upsampled version is assumed to be filled with zeros where the
+        # downsampling occurred.
+        reshaped[:, ratio.numerator :] = 0
+        full = reshaped.flatten()[: len(_a)]
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr
+
+    def keep_every_ratio_cumsum(
+        self, ratio: fractions.Fraction = fractions.Fraction(1, 10)
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing, without loss.
+
+        This procedure effectively pushes an even forward if it happen to be on a sample
+        that would be removed by the downsampling. The `cumsum` method further has the
+        effect of accumulating the magnitude of all missed events within a block.
+        """
+        if ratio >= 1:
+            raise ValueError
+        _a = np.cumsum(self._arr.data)
+        _t = self._arr.time.data
+        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        frc = np.diff(np.concatenate(([0], frc)))
+        # The upsampled version is assumed to be filled with zeros where the
+        # downsampling occurred.
+        width = 2 * ratio.numerator - reshaped.shape[1]
+        if ratio.numerator == 1:
+            reshaped[:, 1:] = (
+                np.ones_like(reshaped[:, 1:]) * np.atleast_2d(reshaped[:, 0]).T
+            )
+        else:
+            reshaped[:, ratio.numerator :] = reshaped[:, width : ratio.numerator]
+        full = reshaped.flatten()[: len(_a)]
+        full = np.diff(np.concatenate(([0], full)))
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr

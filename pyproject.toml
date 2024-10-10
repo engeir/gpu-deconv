@@ -13,6 +13,7 @@ dev = [
   "pydocstringformatter>=0.7.3,<0.8",
   "ruff",
   "mypy>=1.11.2,<2",
+  "pytest>=8.3.3,<9",
 ]
 
 [tool.pixi.dependencies]
