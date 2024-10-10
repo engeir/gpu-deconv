@@ -79,10 +79,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.6-ha6fb4c9_0.conda
       - pypi: https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/55/51844dd50c4fc7a33b653bfaba4c2456f06955289ca770a5dbd5fd267374/cfgv-3.4.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/a2/4c88f17ee50af5093978c4d989936883f959d7d81e1e2fa093863b080c1c/cmcrameri-1.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/99/e6/d11966962b1aa515f5586d3907ad019f4b812c04e4546cc19ebf62b5178e/contourpy-1.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/a9/afc6140d68e260cdcc1214abbe924556cbd1ceaaa5aa7cd3b62eb739e02d/docstring_parser_fork-0.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b9/f8/feced7779d755758a52d1f6635d990b8d98dc0a29fa568bbe0625f18fdf3/filelock-3.16.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/e9/d43f5133b73e7ef9047bda28daaa6905e00b7d39f093b547f7e78ee2fc40/fontawesomefree-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/12/9a45294a7c4520cc32936edd15df1d5c24af701d2f5f51070a9a43d7664b/fonttools-4.54.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -91,6 +93,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/55/91/0a57ce324caf2ff5403edab71c508dd8f648094b18cfbb4c8cc0fde4a6ac/kiwisolver-1.4.7-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/9d/d06860390f9d154fa884f1740a5456378fb153ff57443c91a4a32bab7092/matplotlib-3.9.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/dc/08/cdc1fc6d0d5a67d354741344cc4aa7d53f7128902ebcbe699ddd4f15a61c/mypy-1.11.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cf/f7/3367feadd4ab56783b0971c9b7edfbdd68e0c70ce877949a5dd2117ed4a0/palettable-3.3.3-py2.py3-none-any.whl
@@ -100,6 +104,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/3c/a6/bc1012356d8ece4d66dd75c4b9fc6c1f6650ddd5991e421177d9f8f671be/platformdirs-4.3.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/07/92/caae8c86e94681b42c246f0bca35c059a2f0529e5b92619f6aba4cf7e7b6/pre_commit-3.8.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/95/d8/d09b270248bc2441f966dd094a3de8ae813112d2687036f621202bdef80b/pre_commit_hooks-4.6.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/55/a5/f50c1543bf9213524363a12209a9f39b442ddbca6672f87dd29b1141ec09/pydoclint-0.5.9-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/3a/38/b3a99e9cc66941e044ad3d40e90a72b1191925b8af13e3e4d8edc5c0eb87/pydocstringformatter-0.7.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/0c/0e3c05b1c87bb6a1c76d281b0f35e78d2d80ac91b5f8f524cebf77f51049/pyparsing-3.1.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/11/c3/005fcca25ce078d2cc29fd559379817424e94885510568bc1bc53d7d5846/pytz-2024.2-py2.py3-none-any.whl
@@ -324,6 +330,15 @@ packages:
   size: 249092
   timestamp: 1725400584881
 - kind: pypi
+  name: click
+  version: 8.1.7
+  url: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
+  sha256: ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28
+  requires_dist:
+  - colorama ; platform_system == 'Windows'
+  - importlib-metadata ; python_full_version < '3.8'
+  requires_python: '>=3.7'
+- kind: pypi
   name: cmcrameri
   version: '1.9'
   url: https://files.pythonhosted.org/packages/f9/a2/4c88f17ee50af5093978c4d989936883f959d7d81e1e2fa093863b080c1c/cmcrameri-1.9-py3-none-any.whl
@@ -445,6 +460,12 @@ packages:
   version: 0.3.8
   url: https://files.pythonhosted.org/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl
   sha256: 034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784
+- kind: pypi
+  name: docstring-parser-fork
+  version: 0.0.9
+  url: https://files.pythonhosted.org/packages/79/a9/afc6140d68e260cdcc1214abbe924556cbd1ceaaa5aa7cd3b62eb739e02d/docstring_parser_fork-0.0.9-py3-none-any.whl
+  sha256: 0be85ad00cb25bf5beeb673e46e777facf0f47552fa3a7570d120ef7e3374401
+  requires_python: '>=3.7,<4.0'
 - kind: conda
   name: executing
   version: 2.1.0
@@ -560,7 +581,7 @@ packages:
   name: gpu-deconv
   version: 0.1.0
   path: .
-  sha256: e4004e71676b8c43ddccdcedbb25858f2a806b7fe55bfde849054653f949d33b
+  sha256: 50889eb4c89d6b0164b56f2f576cdfe588e1403fe95dea4bacc55c52a3caf823
   requires_dist:
   - xarray>=2024.9.0,<2025
   - matplotlib>=3.9,<4
@@ -568,6 +589,10 @@ packages:
   - plastik>=0.7.2,<0.8
   - pre-commit>=3.8.0,<4 ; extra == 'dev'
   - pre-commit-hooks>=4.6.0,<5 ; extra == 'dev'
+  - pydoclint>=0.5.9,<0.6 ; extra == 'dev'
+  - pydocstringformatter>=0.7.3,<0.8 ; extra == 'dev'
+  - ruff ; extra == 'dev'
+  - mypy>=1.11.2,<2 ; extra == 'dev'
   requires_python: '>=3.10'
   editable: true
 - kind: conda
@@ -1290,6 +1315,26 @@ packages:
   - sphinx ; extra == 'docs'
   - gmpy2>=2.1.0a4 ; platform_python_implementation != 'PyPy' and extra == 'gmpy'
   - pytest>=4.6 ; extra == 'tests'
+- kind: pypi
+  name: mypy
+  version: 1.11.2
+  url: https://files.pythonhosted.org/packages/dc/08/cdc1fc6d0d5a67d354741344cc4aa7d53f7128902ebcbe699ddd4f15a61c/mypy-1.11.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
+  sha256: 41ea707d036a5307ac674ea172875f40c9d55c5394f888b168033177fce47383
+  requires_dist:
+  - typing-extensions>=4.6.0
+  - mypy-extensions>=1.0.0
+  - tomli>=1.1.0 ; python_full_version < '3.11'
+  - psutil>=4.0 ; extra == 'dmypy'
+  - pip ; extra == 'install-types'
+  - setuptools>=50 ; extra == 'mypyc'
+  - lxml ; extra == 'reports'
+  requires_python: '>=3.8'
+- kind: pypi
+  name: mypy-extensions
+  version: 1.0.0
+  url: https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl
+  sha256: 4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d
+  requires_python: '>=3.5'
 - kind: conda
   name: ncurses
   version: '6.5'
@@ -1561,6 +1606,25 @@ packages:
   sha256: a69199e6a2d45ec59c1020a81ca1549abddc2afb798276d9a0d951752d6abbfe
   requires_dist:
   - ruamel-yaml>=0.15
+  - tomli>=1.1.0 ; python_full_version < '3.11'
+  requires_python: '>=3.8'
+- kind: pypi
+  name: pydoclint
+  version: 0.5.9
+  url: https://files.pythonhosted.org/packages/55/a5/f50c1543bf9213524363a12209a9f39b442ddbca6672f87dd29b1141ec09/pydoclint-0.5.9-py2.py3-none-any.whl
+  sha256: 089327003cef6fe5605cbaa9887859ea5229ce0c9abb52775ffd57513094c1ae
+  requires_dist:
+  - click>=8.1.0
+  - docstring-parser-fork>=0.0.9
+  - tomli>=2.0.1 ; python_full_version < '3.11'
+  - flake8>=4 ; extra == 'flake8'
+  requires_python: '>=3.8'
+- kind: pypi
+  name: pydocstringformatter
+  version: 0.7.3
+  url: https://files.pythonhosted.org/packages/3a/38/b3a99e9cc66941e044ad3d40e90a72b1191925b8af13e3e4d8edc5c0eb87/pydocstringformatter-0.7.3-py3-none-any.whl
+  sha256: 3654f52c49fc729b49712d1e7c49384dfd253bdffeda4939e79dab31491c563f
+  requires_dist:
   - tomli>=1.1.0 ; python_full_version < '3.11'
   requires_python: '>=3.8'
 - kind: conda

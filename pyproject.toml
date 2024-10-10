@@ -6,10 +6,17 @@ requires-python = ">=3.10"
 dependencies = ["xarray>=2024.9.0,<2025", "matplotlib>=3.9,<4", "numpy<2", "plastik>=0.7.2,<0.8"]
 
 [project.optional-dependencies]
-dev = ["pre-commit>=3.8.0,<4", "pre-commit-hooks>=4.6.0,<5"]
+dev = [
+  "pre-commit>=3.8.0,<4",
+  "pre-commit-hooks>=4.6.0,<5",
+  "pydoclint>=0.5.9,<0.6",
+  "pydocstringformatter>=0.7.3,<0.8",
+  "ruff",
+  "mypy>=1.11.2,<2",
+]
 
 [tool.pixi.dependencies]
-python = "3.10.*"
+python = ">=3.10"
 cupy = ">=10,<11"
 cudatoolkit = ">=11.8.0,<12"
 netcdf4 = ">=1.7.1,<2"
@@ -24,44 +31,18 @@ superposed-pulses = { git = "https://github.com/uit-cosmo/superposed-pulses" }
 gpu-deconv = { path = ".", editable = true }
 
 [tool.pixi.tasks]
-all = { depends-on = [
-  "script1",
-  "script2",
-  "script3",
-  "script4",
-  "script5",
-] }
-script1 = { cmd = "python ./src/gpu_deconv/generate/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/gpu_deconv/generate/constant_noise_downsample_signal.py",
-], outputs = [
-  "assets/constant_noise_downsampled_signal",
-] }
-script2 = { cmd = "python ./src/gpu_deconv/generate/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/gpu_deconv/generate/fourier_noise_downsample_signal.py",
-], outputs = [
-  "assets/fourier_noise_downsampled_signal",
-] }
-script3 = { cmd = "python ./src/gpu_deconv/generate/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/gpu_deconv/generate/no_noise_downsample_forcing.py",
-], outputs = [
-  "assets/no_noise_downsampled_forcing",
-] }
-script4 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/gpu_deconv/generate/noise_downsample_forcing.py",
-], outputs = [
-  "assets/noise_downsampled_forcing",
-] }
-script5 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = [
-  "src/gpu_deconv/generate/noise_downsample_signal.py",
-], outputs = [
-  "assets/noise_downsampled_signal",
-] }
-
-[tool.pixi.feature.dev.dependencies]
-ruff = "*"
+all = { depends-on = ["script1", "script2", "script3", "script4", "script5"] }
+script1 = { cmd = "python ./src/gpu_deconv/generate/constant_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/gpu_deconv/generate/constant_noise_downsample_signal.py"], outputs = ["assets/constant_noise_downsampled_signal"] }
+script2 = { cmd = "python ./src/gpu_deconv/generate/fourier_noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/gpu_deconv/generate/fourier_noise_downsample_signal.py"], outputs = ["assets/fourier_noise_downsampled_signal"] }
+script3 = { cmd = "python ./src/gpu_deconv/generate/no_noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/gpu_deconv/generate/no_noise_downsample_forcing.py"], outputs = ["assets/no_noise_downsampled_forcing"] }
+script4 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_forcing.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/gpu_deconv/generate/noise_downsample_forcing.py"], outputs = ["assets/noise_downsampled_forcing"] }
+script5 = { cmd = "python ./src/gpu_deconv/generate/noise_downsample_signal.py", env = { LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/" }, inputs = ["src/gpu_deconv/generate/noise_downsample_signal.py"], outputs = ["assets/noise_downsampled_signal"] }
 
 [tool.pixi.environments]
 default = ["dev"]
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -115,10 +96,10 @@ fixable = ["ALL"]
 ignore = [
   "CPY001",
   "COM812",
-  "E501",   # Line too long
+  "E501", # Line too long
   "ERA001", # Uncommented code
   "ISC001",
-  "T201",   # `print` found
+  "T201", # `print` found
 ]
 per-file-ignores = {}
 select = [

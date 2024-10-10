@@ -1,3 +1,4 @@
+"""Downsample the forcing, and introduce noise on the signal."""
 
 import cupy as cp
 import fppanalysis.deconvolution_methods as dec
@@ -10,8 +11,8 @@ gamma_list = [0.9]
 eps_list = [0.01, 0.1, 0.5, 1, 1.2, 1.5]
 iterlist = [int(1e2), int(1e3), int(1e4), int(1e5)]
 
-seedTW = 10
-seedA = 2
+seed_tw = 10
+seed_amp = 2
 
 dt_signal = 0.01
 dt_forcing = 0.1

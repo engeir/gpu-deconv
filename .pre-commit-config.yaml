@@ -13,20 +13,47 @@ repos:
         args: [--maxkb=500]
   - repo: local
     hooks:
-      # - id: update-nvim
-      #   name: Update nvim README
-      #   language: script
-      #   pass_filenames: false
-      #   entry: .update-nvim
       - id: dprint
         name: dprint
         entry: dprint fmt --incremental=true --allow-no-files
         language: node
         pass_filenames: false
         additional_dependencies: ["dprint"]
+      - id: ruff_format
+        name: Ruff format
+        stages: [commit]
+        language: system
+        entry: pixi run ruff format
+        types: [python]
+      - id: ruff_lint
+        name: Ruff lint
+        stages: [commit]
+        language: system
+        entry: pixi run ruff check
+        types: [python]
+      - id: pydocstringformatter
+        name: pydocstringformatter
+        stages: [commit]
+        language: system
+        entry: pixi run pydocstringformatter
+        types: [python]
+      - id: mypy
+        name: mypy
+        stages: [commit]
+        language: system
+        entry: pixi run mypy
+        types: [python]
+        require_serial: true
+      - id: pydoclint
+        name: pydoclint
+        stages: [commit]
+        language: system
+        entry: pixi run pydoclint
+        types: [python]
+        require_serial: true
 # Exclude files that are generated
-exclude: |
-  (?x)(
-    ^environment.yml|
-    ^pixi.lock|
-  )
+# exclude: |
+#   (?x)(
+#     ^environment.yml|
+#     ^pixi.lock|
+#   )
