@@ -560,11 +560,12 @@ packages:
   name: gpu-deconv
   version: 0.1.0
   path: .
-  sha256: 4e4124fc668e1c756427402379452639c5b3241c97fb3166d0aa883c38e62e2d
+  sha256: e4004e71676b8c43ddccdcedbb25858f2a806b7fe55bfde849054653f949d33b
   requires_dist:
   - xarray>=2024.9.0,<2025
   - matplotlib>=3.9,<4
   - numpy<2
+  - plastik>=0.7.2,<0.8
   - pre-commit>=3.8.0,<4 ; extra == 'dev'
   - pre-commit-hooks>=4.6.0,<5 ; extra == 'dev'
   requires_python: '>=3.10'

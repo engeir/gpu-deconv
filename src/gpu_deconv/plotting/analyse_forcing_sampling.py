@@ -34,7 +34,8 @@ class Plotter:
     def _plot_forcing(da: xr.DataArray) -> None:
         for val in da.sample_ratio.data:
             arr = da.sel(sample_ratio=val)
-            arr.plot(label=val)
+            ls = "-" if val == 0 else "--"
+            arr.plot(label=val, ls=ls)
 
     @staticmethod
     def _plot_response(da: xr.DataArray) -> None:
@@ -87,6 +88,8 @@ class Plotter:
                 #     arr = ds[var]
             elif "event" in var:
                 plt.sca(ax[3])
+                min_, max_ = ds["signal"].time.min(), ds["signal"].time.max()
+                plt.xlim((min_ - 0.05 * (max_ - min_), max_ + 0.05 * (max_ - min_)))
                 arr = ds[var]
             else:
                 continue
@@ -96,7 +99,7 @@ class Plotter:
                 label = var.split("_")[-1]
             if label == var:
                 label = "Original"
-            ls = "-" if label == "Original" else "--"
+            ls = "-" if label == "Original" else ":"
             arr.plot(label=label, ls=ls)
         [a.legend(loc="upper right") for a in ax]
         [a.set_title("") for a in ax]

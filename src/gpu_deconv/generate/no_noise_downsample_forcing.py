@@ -19,9 +19,9 @@ seed_a = 2
 
 dt = 0.01
 
-gamma_list = [0.1, 1]
+gamma_list = [0.01, 0.1]
 
-total_samples = 1e6 + 1
+total_samples = 1e5 + 1
 
 savedata = utils.ASSETS / "no_noise_downsampled_forcing"
 savedata.mkdir(parents=False, exist_ok=True)
@@ -179,13 +179,8 @@ for gamma in gamma_list:
         ratio_ = fractions.Fraction(ratio)
         fd_name = "forcing_downsampled"
         fd_name = f"{fd_name}_{ratio_.numerator}_{ratio_.denominator}"
-        fd_, fdu_ = sampler.keep_every_ratio(ratio=ratio_)
-        # forcing_original.plot()
-        # fd_.plot()
-        # fdu_.sel(sample_ratio=ratio_.denominator).plot()
-        # plt.show()
+        fd_, fdu_ = sampler.keep_every_ratio_cumsum(ratio=ratio_)
         ds[fd_name] = fd_
-        # fdu_ = sampler.up_zero_pad(fd_, ratio=ratio)
         fdu = cp.asarray(fdu_.sel(sample_ratio=float(ratio_)))
         signal = cp.asarray(signal)
         res, err = dec.RL_gauss_deconvolve(
