@@ -75,7 +75,7 @@ def verify_equal_length(*signals: np.ndarray | xr.DataArray) -> None:
         The signals to compare
     """
     first = signals[0]
-    if any(len(x) != len(first) for x in signals[1:]):
+    if any(x.size != first.size for x in signals[1:]):
         raise UnequalArrayLengthError
 
 
@@ -139,8 +139,8 @@ class TimeSeriesModel:
             total_duration=self._total_pulses / self._gamma,
             dt=self._dt,
         )
-        if not len(self._model._times) % 2:
-            self._model._times = self._model._times[:-1]
+        if not len(self._model._times) % 2:  # noqa: SLF001
+            self._model._times = self._model._times[:-1]  # noqa: SLF001
         time_array, signal = self._model.make_realization()
         self._forcing_model = self._model.get_last_used_forcing()
         time_array = self._make_odd_length(time_array)
@@ -153,8 +153,9 @@ class TimeSeriesModel:
         for i in range(arrival_time_index.size):
             forcing[arrival_time_index[i]] += amplitude[i]
         pulse_params = self._forcing_model.get_pulse_parameters(1)
-        pulse_shape = self._model._pulse_generator.get_pulse(
-            self._model._times - pulse_params.arrival_time, pulse_params.duration
+        pulse_shape = self._model._pulse_generator.get_pulse(  # noqa: SLF001
+            self._model._times - pulse_params.arrival_time,  # noqa: SLF001
+            pulse_params.duration,
         )
         pulse_max = np.argmax(pulse_shape)
         half = len(pulse_shape) // 2
@@ -199,7 +200,11 @@ class TimeSeriesModel:
                 ),
             },
             coords={
-                "time": ("time", time_array, {"long_name": "Time", "units": r"$\tau_d$"}),
+                "time": (
+                    "time",
+                    time_array,
+                    {"long_name": "Time", "units": r"$\tau_d$"},
+                ),
                 "tau": ("tau", tau, {"long_name": "Time lag", "units": r"$\tau_d$"}),
                 "arrival_time": (
                     "arrival_time",
@@ -232,10 +237,10 @@ class TimeSeriesModel:
 
         for k in range(self._forcing_model.total_pulses):
             pulse_parameters = self._forcing_model.get_pulse_parameters(k)
-            self._model._add_pulse_to_signal(result, pulse_parameters)
+            self._model._add_pulse_to_signal(result, pulse_parameters)  # noqa: SLF001
 
-        if self._model._noise is not None:
-            result += self._model._discretize_noise(self._forcing_model)
+        if self._model._noise is not None:  # noqa: SLF001
+            result += self._model._discretize_noise(self._forcing_model)  # noqa: SLF001
 
         return result
 
@@ -316,7 +321,6 @@ class Wardrobe:
         time: np.ndarray,
         ratio: fractions.Fraction,
         desc: str | None = None,
-        **kwargs: dict | None,
     ) -> xr.DataArray:
         """Dress a downsampled array named `name` with a time dimension.
 
@@ -335,30 +339,28 @@ class Wardrobe:
             The downsampling factor.
         desc : str | None
             An optional description of the array.
-        **kwargs
-            If new dimensions should be used, they are specified here and passed to the
-            DataArray object.
         """
         if len(data) == len(time):
             _d = data
             _t = time
-        elif len(data) == len(time[::ratio]):
+        elif len(data) == len(time[:: ratio.denominator]):
             _d = data
-            _t = time[::ratio]
-        elif len(data) == len(time[::ratio][:-1]):
+            _t = time[:: ratio.denominator]
+        elif len(data) == len(time[:: ratio.denominator][:-1]):
             _d = data
-            _t = time[::ratio][:-1]
+            _t = time[:: ratio.denominator][:-1]
         else:
             raise UnequalArrayLengthError
         _a = {"long_name": f"{name}, sparse", "downsample_factor": str(ratio)}
         if desc is not None:
             _a.update({"description": desc})
+        dim = f"time_sparse_{ratio.numerator}_{ratio.denominator}"
         return xr.DataArray(
             _d,
-            dims=["time_sparse"],
+            dims=[dim],
             coords={
-                "time_sparse": (
-                    "time_sparse",
+                dim: (
+                    dim,
                     _t,
                     {"long_name": "Time", "units": r"$\tau_d$"},
                 )
