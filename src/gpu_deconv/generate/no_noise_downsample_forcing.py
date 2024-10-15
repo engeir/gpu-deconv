@@ -75,11 +75,11 @@ def main() -> None:
             res_ = utils.Wardrobe.dress_response_pulse(
                 res.get(), time_array.data, iterlist
             )
-            res_ = res_.expand_dims(dim={"sample_ratio": [ratio]})
-            res_da = xr.concat((res_da, res_), "sample_ratio")
+            res_ = res_.expand_dims(dim={"sample_ratio": [float(ratio_)]})
+            res_da = xr.concat((res_da, res_), dim="sample_ratio")
             err_ = utils.Wardrobe.dress_response_pulse_error(err.get())
-            err_ = err_.expand_dims(dim={"sample_ratio": [ratio]})
-            err_da = xr.concat((err_da, err_), "sample_ratio")
+            err_ = err_.expand_dims(dim={"sample_ratio": [float(ratio_)]})
+            err_da = xr.concat((err_da, err_), dim="sample_ratio")
         ds = ds.assign(forcing=fdu_)
         ds = ds.assign(response_pulse=res_da)
         ds = ds.assign(response_pulse_err=err_da)
