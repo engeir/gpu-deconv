@@ -82,6 +82,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f9/a2/4c88f17ee50af5093978c4d989936883f959d7d81e1e2fa093863b080c1c/cmcrameri-1.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/99/e6/d11966962b1aa515f5586d3907ad019f4b812c04e4546cc19ebf62b5178e/contourpy-1.3.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/5b/e4/9a3f1d6c88e6332f1d04c8c2941ba0f5dd1cfb58d6d95860598535507cc9/cosmoplots-0.4.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/79/a9/afc6140d68e260cdcc1214abbe924556cbd1ceaaa5aa7cd3b62eb739e02d/docstring_parser_fork-0.0.9-py3-none-any.whl
@@ -91,11 +92,12 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/e5/12/9a45294a7c4520cc32936edd15df1d5c24af701d2f5f51070a9a43d7664b/fonttools-4.54.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: git+https://github.com/uit-cosmo/fpp-analysis-tools@6f98750636f11e1e239471bd7a88e88871060485
       - pypi: https://files.pythonhosted.org/packages/7d/0c/4ef72754c050979fdcc06c744715ae70ea37e734816bb6514f79df77a42f/identify-2.6.1-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/59/9b/ecce94952ab5ea74c31dcf9ccf78ccd484eebebef06019bf8cb579ab4519/importlib_metadata-6.11.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/55/91/0a57ce324caf2ff5403edab71c508dd8f648094b18cfbb4c8cc0fde4a6ac/kiwisolver-1.4.7-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/8d/9d/d06860390f9d154fa884f1740a5456378fb153ff57443c91a4a32bab7092/matplotlib-3.9.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/dc/08/cdc1fc6d0d5a67d354741344cc4aa7d53f7128902ebcbe699ddd4f15a61c/mypy-1.11.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/89/56/20d3136d6904c369422423d267c5ceb312487586cdd81e90bf7e237b67e7/mypy-1.12.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl
@@ -116,6 +118,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/0b/99/e564248b5a2ec8f005a6209e2e59a458ce4850281fb28e4aa3571fe91f52/pywaffle-1.1.1-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d6/60/056374044b41f6e2ccca8239d1c9e422e3906f54c7cd08d55a19d98e2a28/pywavelets-1.7.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/6b/4e/1523cb902fd98355e2e9ea5e5eb237cbc5f3ad5f3075fa65087aa0ecb669/PyYAML-6.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c2/23/29d0e51d712b54c60513c4aebd969c9c6a188e0044d6a8940592effb210b/returns-0.21.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/73/67/8ece580cc363331d9a53055130f86b096bf16e38156e33b1d3014fffda6b/ruamel.yaml-0.18.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d3/62/c60b034d9a008bbd566eeecf53a5a4c73d191c8de261290db6761802b72d/ruamel.yaml.clib-0.2.8-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/47/78/b0c2c23880dd1e99e938ad49ccfb011ae353758a2dc5ed7ee59baff684c3/scipy-1.14.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -126,6 +129,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/a6/ab/7e5f53c3b9d14972843a647d8d7a853969a58aecc7559cb3267302c94774/tzdata-2024.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c6/1d/e1a44fdd6d30829ba21fc58b5d98a67e7aae8f4165f11d091e53aec12560/virtualenv-20.26.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/94/28/3a6365e45721c7c9078968ed94b4a60076bc31d73b8519021a69b4995b63/xarray-2024.9.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/62/8b/5ba542fa83c90e09eac972fc9baca7a88e7e7ca4b221a89251954019308b/zipp-3.20.2-py3-none-any.whl
       - pypi: .
 packages:
 - kind: conda
@@ -394,6 +398,16 @@ packages:
   - pytest-xdist ; extra == 'test-no-images'
   - wurlitzer ; extra == 'test-no-images'
   requires_python: '>=3.9'
+- kind: pypi
+  name: cosmoplots
+  version: 0.4.3
+  url: https://files.pythonhosted.org/packages/5b/e4/9a3f1d6c88e6332f1d04c8c2941ba0f5dd1cfb58d6d95860598535507cc9/cosmoplots-0.4.3-py3-none-any.whl
+  sha256: 3447386e13252fd4681de8b5f7823970439bdb4b19bafb91f15edaed13332cf4
+  requires_dist:
+  - importlib-metadata>=6.6.0,<7.0.0
+  - matplotlib>=3.3.2
+  - numpy>=1.15.0
+  requires_python: '>=3.8,<3.13'
 - kind: conda
   name: cudatoolkit
   version: 11.8.0
@@ -593,19 +607,21 @@ packages:
   name: gpu-deconv
   version: 0.1.0
   path: .
-  sha256: f54cf7cc7c93bd8a24653ec5f3258667522c64b19c84ce04171687360ea56548
+  sha256: f3e36fb3bd87035d8d16aa75ebfc3c7a342790a0dde987c8c592ca27f6531407
   requires_dist:
   - xarray>=2024.9.0,<2025
   - matplotlib>=3.9,<4
   - numpy<2
   - plastik>=0.7.2,<0.8
+  - returns[compatible-mypy]>=0.21.0,<0.22
+  - cosmoplots>=0.4.3,<0.5
   - pre-commit>=3.8.0,<4 ; extra == 'dev'
   - pre-commit-hooks>=4.6.0,<5 ; extra == 'dev'
   - pydoclint>=0.5.9,<0.6 ; extra == 'dev'
   - pydocstringformatter>=0.7.3,<0.8 ; extra == 'dev'
   - ruff ; extra == 'dev'
-  - mypy>=1.11.2,<2 ; extra == 'dev'
   - pytest>=8.3.3,<9 ; extra == 'dev'
+  - mypy>=1.12.0,<2 ; extra == 'dev'
   requires_python: '>=3.10'
   editable: true
 - kind: conda
@@ -695,6 +711,35 @@ packages:
   sha256: 53863bcac7caf8d2ed85bd20312ea5dcfc22226800f6d6881f232d861db5a8f0
   requires_dist:
   - ukkonen ; extra == 'license'
+  requires_python: '>=3.8'
+- kind: pypi
+  name: importlib-metadata
+  version: 6.11.0
+  url: https://files.pythonhosted.org/packages/59/9b/ecce94952ab5ea74c31dcf9ccf78ccd484eebebef06019bf8cb579ab4519/importlib_metadata-6.11.0-py3-none-any.whl
+  sha256: f0afba6205ad8f8947c7d338b5342d5db2afbfd82f9cbef7879a9539cc12eb9b
+  requires_dist:
+  - zipp>=0.5
+  - typing-extensions>=3.6.4 ; python_full_version < '3.8'
+  - sphinx>=3.5 ; extra == 'docs'
+  - sphinx<7.2.5 ; extra == 'docs'
+  - jaraco-packaging>=9.3 ; extra == 'docs'
+  - rst-linker>=1.9 ; extra == 'docs'
+  - furo ; extra == 'docs'
+  - sphinx-lint ; extra == 'docs'
+  - jaraco-tidelift>=1.4 ; extra == 'docs'
+  - ipython ; extra == 'perf'
+  - pytest>=6 ; extra == 'testing'
+  - pytest-checkdocs>=2.4 ; extra == 'testing'
+  - pytest-cov ; extra == 'testing'
+  - pytest-enabler>=2.2 ; extra == 'testing'
+  - pytest-ruff ; extra == 'testing'
+  - packaging ; extra == 'testing'
+  - pyfakefs ; extra == 'testing'
+  - flufl-flake8 ; extra == 'testing'
+  - pytest-perf>=0.9.2 ; extra == 'testing'
+  - pytest-black>=0.3.7 ; platform_python_implementation != 'PyPy' and extra == 'testing'
+  - pytest-mypy>=0.9.1 ; platform_python_implementation != 'PyPy' and extra == 'testing'
+  - importlib-resources>=1.3 ; python_full_version < '3.9' and extra == 'testing'
   requires_python: '>=3.8'
 - kind: pypi
   name: iniconfig
@@ -1336,9 +1381,9 @@ packages:
   - pytest>=4.6 ; extra == 'tests'
 - kind: pypi
   name: mypy
-  version: 1.11.2
-  url: https://files.pythonhosted.org/packages/dc/08/cdc1fc6d0d5a67d354741344cc4aa7d53f7128902ebcbe699ddd4f15a61c/mypy-1.11.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
-  sha256: 41ea707d036a5307ac674ea172875f40c9d55c5394f888b168033177fce47383
+  version: 1.12.0
+  url: https://files.pythonhosted.org/packages/89/56/20d3136d6904c369422423d267c5ceb312487586cdd81e90bf7e237b67e7/mypy-1.12.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl
+  sha256: 6cabe4cda2fa5eca7ac94854c6c37039324baaa428ecbf4de4567279e9810f9e
   requires_dist:
   - typing-extensions>=4.6.0
   - mypy-extensions>=1.0.0
@@ -1805,6 +1850,15 @@ packages:
   size: 281456
   timestamp: 1679532220005
 - kind: pypi
+  name: returns
+  version: 0.21.0
+  url: https://files.pythonhosted.org/packages/c2/23/29d0e51d712b54c60513c4aebd969c9c6a188e0044d6a8940592effb210b/returns-0.21.0-py3-none-any.whl
+  sha256: 5e90e14e76fc88d029c3c95a420077eab7fec25b3dbee48e6a7b5e06d6c39b97
+  requires_dist:
+  - mypy>=1.4.0,<2.0.0 ; extra == 'compatible-mypy'
+  - typing-extensions>=4.0,<5.0
+  requires_python: '>=3.7,<4.0'
+- kind: pypi
   name: ruamel-yaml
   version: 0.18.6
   url: https://files.pythonhosted.org/packages/73/67/8ece580cc363331d9a53055130f86b096bf16e38156e33b1d3014fffda6b/ruamel.yaml-0.18.6-py3-none-any.whl
@@ -2088,6 +2142,32 @@ packages:
   purls: []
   size: 418368
   timestamp: 1660346797927
+- kind: pypi
+  name: zipp
+  version: 3.20.2
+  url: https://files.pythonhosted.org/packages/62/8b/5ba542fa83c90e09eac972fc9baca7a88e7e7ca4b221a89251954019308b/zipp-3.20.2-py3-none-any.whl
+  sha256: a817ac80d6cf4b23bf7f2828b7cabf326f15a001bea8b1f9b49631780ba28350
+  requires_dist:
+  - pytest-checkdocs>=2.4 ; extra == 'check'
+  - pytest-ruff>=0.2.1 ; sys_platform != 'cygwin' and extra == 'check'
+  - pytest-cov ; extra == 'cover'
+  - sphinx>=3.5 ; extra == 'doc'
+  - jaraco-packaging>=9.3 ; extra == 'doc'
+  - rst-linker>=1.9 ; extra == 'doc'
+  - furo ; extra == 'doc'
+  - sphinx-lint ; extra == 'doc'
+  - jaraco-tidelift>=1.4 ; extra == 'doc'
+  - pytest-enabler>=2.2 ; extra == 'enabler'
+  - pytest!=8.1.*,>=6 ; extra == 'test'
+  - jaraco-itertools ; extra == 'test'
+  - jaraco-functools ; extra == 'test'
+  - more-itertools ; extra == 'test'
+  - big-o ; extra == 'test'
+  - pytest-ignore-flaky ; extra == 'test'
+  - jaraco-test ; extra == 'test'
+  - importlib-resources ; python_full_version < '3.9' and extra == 'test'
+  - pytest-mypy ; extra == 'type'
+  requires_python: '>=3.8'
 - kind: conda
   name: zlib
   version: 1.3.1
