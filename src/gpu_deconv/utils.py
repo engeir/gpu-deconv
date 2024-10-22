@@ -3,9 +3,12 @@
 import fractions
 import pathlib
 from collections.abc import Generator
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
+import numpy.typing as npt
+import returns.maybe
+import scipy.signal
 import superposedpulses.point_model as pm
 import xarray as xr
 
@@ -21,6 +24,13 @@ def find_repo_root(path: pathlib.Path | str) -> pathlib.Path:
 
 
 ASSETS = find_repo_root(__file__) / "assets"
+
+
+def inverse_cumsum(arr: npt.NDArray[Any]) -> npt.NDArray[Any]:
+    """Compute an inverse cumsum procedure to a flat, 1D array."""
+    if arr.ndim > 1:
+        raise ValueError
+    return np.diff(np.concatenate(([0], arr)))
 
 
 def all_files(directory: str) -> Generator[pathlib.Path]:
@@ -42,7 +52,7 @@ class TauError(EvenLengthError):
     def __init__(
         self,
         message: str = "The arrays must have an odd length.",
-        arr: np.ndarray | None = None,
+        arr: npt.NDArray[Any] | None = None,
     ) -> None:
         self.message = message
         if arr is not None:
@@ -58,21 +68,35 @@ class UnequalArrayLengthError(Exception):
         super().__init__(self.message)
 
 
-def verify_odd_length(signal: np.ndarray | xr.DataArray) -> None:
+def verify_odd_length(signal: npt.NDArray[Any] | xr.DataArray) -> None:
     """Raise an error if the signal does not have an odd number length.
 
-    signal : np.ndarray
+    Parameters
+    ----------
+    signal : npt.NDArray[Any] | xr.DataArray
         The signal array.
+
+    Raises
+    ------
+    EvenLengthError
+        If the input array have even length.
     """
     if len(signal) % 2 == 0:
         raise EvenLengthError
 
 
-def verify_equal_length(*signals: np.ndarray | xr.DataArray) -> None:
+def verify_equal_length(*signals: npt.NDArray[Any] | xr.DataArray) -> None:
     """Raise an error if the signals have unequal length.
 
-    *signals : np.ndarray
+    Parameters
+    ----------
+    *signals : npt.NDArray[Any] | xr.DataArray
         The signals to compare
+
+    Raises
+    ------
+    UnequalArrayLengthError
+        If the input arrays differ in length.
     """
     first = signals[0]
     if any(x.size != first.size for x in signals[1:]):
@@ -223,19 +247,19 @@ class TimeSeriesModel:
         )
 
     @staticmethod
-    def _make_odd_length(arr: np.ndarray) -> np.ndarray:
+    def _make_odd_length(arr: npt.NDArray[Any]) -> npt.NDArray[Any]:
         if len(arr) % 2:
             return arr
         return arr[:-1]
 
     def _add_noise(
         self, epsilon: float, version: Literal["additive", "dynamic"]
-    ) -> np.ndarray:
+    ) -> npt.NDArray[Any]:
         self._model.add_noise(epsilon, noise_type=version)
         return self._reuse_realization()
 
-    def _reuse_realization(self) -> np.ndarray:
-        result = np.zeros_like(self.ds["signal"].data)
+    def _reuse_realization(self) -> npt.NDArray[Any]:
+        result: npt.NDArray[Any] = np.zeros_like(self.ds["signal"].data)
 
         for k in range(self._forcing_model.total_pulses):
             pulse_parameters = self._forcing_model.get_pulse_parameters(k)
@@ -255,7 +279,7 @@ class Wardrobe:
 
     @staticmethod
     def dress_response_pulse(
-        data: np.ndarray, tau: np.ndarray, iterlist: list[int]
+        data: npt.NDArray[Any], tau: npt.NDArray[Any], iterlist: list[int]
     ) -> xr.DataArray:
         """Dress a pulse function with tau and iterlist dimensions."""
         if tau[0] != -tau[-1]:
@@ -277,7 +301,7 @@ class Wardrobe:
         )
 
     @staticmethod
-    def dress_response_pulse_error(data: np.ndarray) -> xr.DataArray:
+    def dress_response_pulse_error(data: npt.NDArray[Any]) -> xr.DataArray:
         """Dress the error from the deconvolution with an iterations dimension."""
         return xr.DataArray(
             data,
@@ -299,8 +323,8 @@ class Wardrobe:
     def dress_an_upsampled(
         name: str,
         /,
-        data: np.ndarray,
-        time: np.ndarray,
+        data: npt.NDArray[Any],
+        time: npt.NDArray[Any],
         ratio: fractions.Fraction,
         desc: str | None = None,
     ) -> xr.DataArray:
@@ -319,8 +343,8 @@ class Wardrobe:
     def dress_a_downsampled(
         name: str,
         /,
-        data: np.ndarray,
-        time: np.ndarray,
+        data: npt.NDArray[Any],
+        time: npt.NDArray[Any],
         ratio: fractions.Fraction,
         desc: str | None = None,
     ) -> xr.DataArray:
@@ -331,9 +355,9 @@ class Wardrobe:
         name : str
             The name given to the array and used in labels. It is recommended to specify
             capital first letter.
-        data : np.ndarray
+        data : npt.NDArray[Any]
             The data to record.
-        time : np.ndarray
+        time : npt.NDArray[Any]
             The time dimension. This can either be the same length as `data` (i.e.
             downsampled), or the original time array which will then be attempted to be
             downsampled.
@@ -396,7 +420,7 @@ class SampleStrategyForcing:
         return arr.expand_dims(dim={new_dim: [new_coord]})
 
     def _create_corresponding_upsampled(
-        self, arr: np.ndarray, times: np.ndarray, ratio: fractions.Fraction
+        self, arr: npt.NDArray[Any], times: npt.NDArray[Any], ratio: fractions.Fraction
     ) -> None:
         da = Wardrobe.dress_an_upsampled(
             "Forcing",
@@ -411,34 +435,37 @@ class SampleStrategyForcing:
 
     @staticmethod
     def _sample_at_ratio(
-        orig_arr: np.ndarray, orig_time: np.ndarray, ratio: fractions.Fraction
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        orig_arr: npt.NDArray[Any],
+        orig_time: npt.NDArray[Any],
+        ratio: fractions.Fraction,
+    ) -> tuple[npt.NDArray[Any], npt.NDArray[Any], npt.NDArray[Any]]:
         """Sample an array at a given ratio.
 
         Parameters
         ----------
-        orig_arr : np.ndarray
+        orig_arr : npt.NDArray[Any]
             The input array that should be downsampled.
-        orig_time : np.ndarray
+        orig_time : npt.NDArray[Any]
             The time axis of the input array that should be downsampled.
         ratio : fractions.Fraction
             The ratio of the downsampling to original array.
 
         Returns
         -------
-        np.ndarray
+        npt.NDArray[Any]
             The downsampled input array.
-        np.ndarray
+        npt.NDArray[Any]
             The time axis of the downsampled input array.
-        np.ndarray
+        npt.NDArray[Any]
             The upsampling of the input array with equal size to the input array.
         """
 
-        def _reshape(arr: np.ndarray, ratio: fractions.Fraction) -> np.ndarray:
-            rows = int(np.ceil(len(arr) / ratio.denominator))
+        def _reshape(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
+            _arr = np.asarray(arr)
+            rows = int(np.ceil(len(_arr) / ratio.denominator))
             return np.pad(
-                arr.astype(float),
-                (0, ratio.denominator * rows - arr.size),
+                _arr.astype(float),
+                (0, ratio.denominator * rows - _arr.size),
                 mode="constant",
                 constant_values=np.nan,
             ).reshape(rows, ratio.denominator)
@@ -480,6 +507,150 @@ class SampleStrategyForcing:
         self._create_corresponding_upsampled(full, _t, ratio)
         return down, self.arr
 
+    def keep_every_ratio_nth(
+        self,
+        ratio: fractions.Fraction = fractions.Fraction(1, 10),
+        down_index: int = 0,
+        up_index: int = 0,
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing, without loss.
+
+        This procedure places the sum of all removed events to the first possible
+        sampled location.
+
+        Parameters
+        ----------
+        ratio : fractions.Fraction
+            The number of kept indices per index group, thus for every
+            `ratio.denominator` indices, we keep the first `ratio.numerator` elements.
+            Only a numerator of 1 is currently supported.
+        down_index : int
+            When downsampling, we need to deicide where the downsampled point is placed
+            (for example, from daily to monthly, is it placed on Jan 1. or Jan 31.). If
+            we let the downsampled index be placed at the first time within a group,
+            the `group_index` would be zero (default). Similarly, if we let the
+            downsampled point be placed at the last element, the `group_index` should
+            be `ratio.denominator - 1`.
+        up_index : int
+            When zero-padding during upsampling, this decides if the data point should
+            be at the first index (default) or any other index in the padding region.
+
+        Returns
+        -------
+        xr.DataArray
+            The downsampled forcing array.
+        xr.DataArray
+            All the upsampled forcing arrays.
+
+        Raises
+        ------
+        NotImplementedError
+            If `ratio.numerator` is not one.
+        ValueError
+            If the ratio is greater than one.
+        """
+        if ratio.numerator != 1:
+            raise NotImplementedError
+        if ratio >= 1:
+            raise ValueError
+        down_index %= ratio.denominator
+        up_index %= ratio.denominator
+
+        def _reshape(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
+            _arr = np.asarray(arr)
+            return np.pad(
+                _arr, (0, len(_arr) % ratio.denominator), constant_values=_arr[-1]
+            )
+
+        _a = np.cumsum(self._arr.data)
+        _t = self._arr.time.data
+        reshaped = _reshape(_a, ratio).flatten()[down_index :: ratio.denominator]
+        frc_time = _reshape(_t, ratio)[down_index :: ratio.denominator]
+        frc = inverse_cumsum(reshaped)
+        full = np.repeat(reshaped, ratio.denominator)
+        full = np.concatenate((np.zeros(up_index), full))[: len(_a)]
+        full = inverse_cumsum(full)
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr
+
+    def keep_every_ratio_repeat(
+        self,
+        ratio: fractions.Fraction = fractions.Fraction(1, 10),
+        down_index: int = 0,
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing, without loss.
+
+        This procedure places the sum of all removed events to the first possible
+        sampled location.
+
+        Parameters
+        ----------
+        ratio : fractions.Fraction
+            The number of kept indices per index group, thus for every
+            `ratio.denominator` indices, we keep the first `ratio.numerator` elements.
+            Only a numerator of 1 is currently supported.
+        down_index : int
+            When downsampling, we need to deicide where the downsampled point is placed
+            (for example, from daily to monthly, is it placed on Jan 1. or Jan 31.). If
+            we let the downsampled index be placed at the first time within a group,
+            the `group_index` would be zero (default). Similarly, if we let the
+            downsampled point be placed at the last element, the `group_index` should
+            be `ratio.denominator - 1`.
+
+        Returns
+        -------
+        xr.DataArray
+            The downsampled forcing array.
+        xr.DataArray
+            All the upsampled forcing arrays.
+
+        Raises
+        ------
+        NotImplementedError
+            If `ratio.numerator` is not one.
+        ValueError
+            If the ratio is greater than one.
+        """
+        if ratio.numerator != 1:
+            raise NotImplementedError
+        if ratio >= 1:
+            raise ValueError
+        down_index %= ratio.denominator
+
+        def _reshape(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
+            _arr = np.asarray(arr)
+            return np.pad(
+                _arr, (0, len(_arr) % ratio.denominator), constant_values=_arr[-1]
+            )
+
+        _a = np.cumsum(self._arr.data)
+        _t = self._arr.time.data
+        _group_idx = down_index
+        reshaped = _reshape(_a, ratio).flatten()[_group_idx :: ratio.denominator]
+        frc_time = _reshape(_t, ratio)[_group_idx :: ratio.denominator]
+        frc = inverse_cumsum(reshaped)
+        full = np.repeat(frc, ratio.denominator)
+        full = full.flatten()[: len(_a)]
+        # full = inverse_cumsum(full)
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr
+
     def keep_every_ratio_cumsum(
         self, ratio: fractions.Fraction = fractions.Fraction(1, 10)
     ) -> tuple[xr.DataArray, xr.DataArray]:
@@ -488,13 +659,30 @@ class SampleStrategyForcing:
         This procedure effectively pushes an even forward if it happen to be on a sample
         that would be removed by the downsampling. The `cumsum` method further has the
         effect of accumulating the magnitude of all missed events within a block.
+
+        Parameters
+        ----------
+        ratio : fractions.Fraction
+            The ratio of kept downsample items per original items.
+
+        Returns
+        -------
+        xr.DataArray
+            The downsampled forcing array.
+        xr.DataArray
+            All the upsampled forcing arrays.
+
+        Raises
+        ------
+        ValueError
+            If the ratio is greater than one.
         """
         if ratio >= 1:
             raise ValueError
         _a = np.cumsum(self._arr.data)
         _t = self._arr.time.data
         frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
-        frc = np.diff(np.concatenate(([0], frc)))
+        frc = inverse_cumsum(frc)
         # The upsampled version is assumed to be filled with zeros where the
         # downsampling occurred.
         width = 2 * ratio.numerator - reshaped.shape[1]
@@ -505,7 +693,7 @@ class SampleStrategyForcing:
         else:
             reshaped[:, ratio.numerator :] = reshaped[:, width : ratio.numerator]
         full = reshaped.flatten()[: len(_a)]
-        full = np.diff(np.concatenate(([0], full)))
+        full = inverse_cumsum(full)
         verify_equal_length(full, self._arr)
         down = Wardrobe.dress_a_downsampled(
             "Forcing",
@@ -515,4 +703,107 @@ class SampleStrategyForcing:
             desc='Raw "choose every n" downsampling',
         )
         self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr
+
+    def fourier_transform(
+        self, ratio: fractions.Fraction = fractions.Fraction(1, 10)
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing by low-pass filtering."""
+        if ratio >= 1:
+            raise ValueError
+        _a = self._arr.data
+        _t = self._arr.time.data
+        # First, reshape so that the length of a row is `ratio.denominator`
+        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        fourier = np.fft.rfft(_a)
+        fourier[-100:] = 0
+        # np.fft.irfft computes the inverse of the one-dimensional discrete
+        # Fourier Transform for real input, as computed by rfft.
+        # Ensures same length as the time array that hasn't been altered.
+        full = np.fft.irfft(fourier, n=len(self._arr.data))
+        # _a = np.cumsum(self._arr.data)
+        # _t = self._arr.time.data
+        # frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        # frc = inverse_cumsum(frc)
+        # # The upsampled version is assumed to be filled with zeros where the
+        # # downsampling occurred.
+        # width = 2 * ratio.numerator - reshaped.shape[1]
+        # if ratio.numerator == 1:
+        #     reshaped[:, 1:] = (
+        #         np.ones_like(reshaped[:, 1:]) * np.atleast_2d(reshaped[:, 0]).T
+        #     )
+        # else:
+        #     reshaped[:, ratio.numerator :] = reshaped[:, width : ratio.numerator]
+        # full = reshaped.flatten()[: len(_a)]
+        # full = inverse_cumsum(full)
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, self._arr.time.data, ratio)
+        return down, self.arr
+
+    def lowpass(
+        self, ratio: fractions.Fraction = fractions.Fraction(1, 10)
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing by low-pass filtering."""
+        if ratio >= 1:
+            raise ValueError
+
+        def butter_lowpass(
+            cutoff: float, fs: float, order: int = 5
+        ) -> returns.maybe.Maybe[tuple[npt.NDArray[Any], npt.NDArray[Any]]]:
+            b, a = scipy.signal.butter(order, cutoff, fs=fs, btype="low", analog=False)
+            match b, a:
+                case (np.ndarray(), np.ndarray()):
+                    return returns.maybe.Some((b, a))
+                case _:
+                    return returns.maybe.Nothing
+
+        def butter_lowpass_filter(
+            data: npt.ArrayLike, cutoff: float, fs: float, order: int = 5
+        ) -> returns.maybe.Maybe[npt.NDArray[Any]]:
+            match butter_lowpass(cutoff, fs, order=order):
+                case returns.maybe.Some(out):
+                    b, a = out
+                    c = scipy.signal.lfilter(b, a, data)
+                    return returns.maybe.Some(c)
+                case returns.maybe.Maybe.empty:
+                    return returns.maybe.Nothing
+                case _:
+                    return returns.maybe.Nothing
+
+        _a = self._arr.data
+        _t = self._arr.time.data
+        cutoff = ratio.numerator
+        fs = ratio.denominator * 2
+        order = 1
+        # b, a = butter_lowpass(cutoff, fs, order=order).unwrap()
+        # w, h = scipy.signal.freqz(b, a, fs=fs, worN=8000)
+        # plt.figure()
+        # plt.plot(w, np.abs(h), "b")
+        # plt.plot(cutoff, 0.5 * np.sqrt(2), "ko")
+        # plt.axvline(cutoff, color="k")
+        # plt.xlim(0, 0.5 * fs)
+        # plt.title("Lowpass Filter Frequency Response")
+        # plt.xlabel("Frequency [Hz]")
+        # plt.grid()
+        # plt.show()
+        full = butter_lowpass_filter(_a, cutoff=cutoff, fs=fs, order=order).unwrap()
+        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        # fourier = np.fft.rfft(frc)
+        # full = np.fft.irfft(fourier, n=len(self._arr.data))
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, self._arr.time.data, ratio)
         return down, self.arr
