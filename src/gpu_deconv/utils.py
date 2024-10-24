@@ -2,13 +2,14 @@
 
 import fractions
 import pathlib
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import Any, Literal
 
 import numpy as np
 import numpy.typing as npt
 import returns.maybe
 import scipy.signal
+import superposedpulses.forcing as pf
 import superposedpulses.point_model as pm
 import xarray as xr
 
@@ -103,22 +104,72 @@ def verify_equal_length(*signals: npt.NDArray[Any] | xr.DataArray) -> None:
         raise UnequalArrayLengthError
 
 
+class RandomStateForcingGenerator(pf.ForcingGenerator):  # type: ignore[misc]
+    """Generates a standard forcing, with uniformly distributed arrival times.
+
+    The resulting process is therefore a Poisson process. Amplitude and
+    duration distributions can be customized.
+    """
+
+    def __init__(self, seed: int) -> None:
+        self._random_state = np.random.default_rng(seed)
+        self._amplitude_distribution: Callable[[int], npt.NDArray[Any]] | None = None
+        self._duration_distribution: Callable[[int], npt.NDArray[Any]] | None = None
+
+    def get_forcing(
+        self, times: npt.NDArray[np.float64], waiting_time: float
+    ) -> pf.Forcing:
+        """Return the forcing object that the class implements."""
+        total_pulses = int(max(times) / waiting_time)
+        arrival_times = self._random_state.uniform(
+            low=times[0], high=times[len(times) - 1], size=total_pulses
+        )
+        amplitudes = self._get_amplitudes(total_pulses)
+        durations = self._get_durations(total_pulses)
+        return pf.Forcing(total_pulses, arrival_times, amplitudes, durations)
+
+    def set_amplitude_distribution(
+        self,
+        amplitude_distribution_function: Callable[[int], npt.NDArray[np.float64]],
+    ) -> None:
+        """Set the amplitude distribution."""
+        self._amplitude_distribution = amplitude_distribution_function
+
+    def set_duration_distribution(
+        self, duration_distribution_function: Callable[[int], npt.NDArray[np.float64]]
+    ) -> None:
+        """Set the duration distribution."""
+        self._duration_distribution = duration_distribution_function
+
+    def _get_amplitudes(self, total_pulses: int) -> npt.NDArray[np.float64]:
+        if self._amplitude_distribution is not None:
+            return self._amplitude_distribution(total_pulses)
+        return self._random_state.exponential(scale=1.0, size=total_pulses)
+
+    def _get_durations(self, total_pulses: int) -> npt.NDArray[np.float64]:
+        if self._duration_distribution is not None:
+            return self._duration_distribution(total_pulses)
+        return np.ones(total_pulses)
+
+
 class TimeSeriesModel:
     """Generate a signal without noise, and with additive and dynamical noise."""
 
     def __init__(
         self,
-        total_pulses: float | None = None,
+        seed: int | None = None,
+        total_pulses: int | None = None,
         gamma: float | None = None,
         dt: float | None = None,
     ) -> None:
-        self._total_pulses = 1e3 if total_pulses is None else total_pulses
+        self._seed = seed
+        self._total_pulses = int(1e3) if total_pulses is None else total_pulses
         self._gamma = 1e-1 if gamma is None else gamma
         self._dt = 1e-2 if dt is None else dt
 
     def __call__(
         self,
-        total_pulses: float,
+        total_pulses: int,
         gamma: float,
         dt: float,
         *,
@@ -163,6 +214,10 @@ class TimeSeriesModel:
             total_duration=self._total_pulses / self._gamma,
             dt=self._dt,
         )
+        if self._seed is not None:
+            self._model.set_custom_forcing_generator(
+                RandomStateForcingGenerator(self._seed)
+            )
         if not len(self._model._times) % 2:  # noqa: SLF001
             self._model._times = self._model._times[:-1]  # noqa: SLF001
         time_array, signal = self._model.make_realization()
@@ -482,20 +537,71 @@ class SampleStrategyForcing:
         verify_odd_length(frc)
         return frc, frc_time, reshaped
 
-    def keep_every_ratio_blind(
-        self, ratio: fractions.Fraction
+    @staticmethod
+    def _extend(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
+        """Extend the array so that its length is perfectly divisible by the sampling."""
+        _arr = np.asarray(arr)
+        return np.pad(
+            _arr, (0, len(_arr) % ratio.denominator), constant_values=_arr[-1]
+        )
+
+    @staticmethod
+    def _downsample_lossy(
+        arr: npt.ArrayLike, index: int, rate: int
+    ) -> npt.NDArray[Any]:
+        _arr = np.asarray(arr)
+        # First, extend so that the length of the array is divisible by
+        # `ratio.denominator`. Then slice it.
+        _arr = np.pad(_arr, (0, len(_arr) % rate), constant_values=_arr[-1])
+        return _arr[index::rate]
+
+    @staticmethod
+    def _upsample_nth(
+        arr: npt.ArrayLike, index: int, rate: int, target_length: int
+    ) -> npt.NDArray[Any]:
+        _arr = np.asarray(arr)
+        full = np.zeros(target_length + (target_length % rate) - 1)
+        clip_length = len(full[index::rate])
+        while len(_arr) < clip_length:
+            _arr = np.concatenate((_arr, [0]))
+        full[index::rate] = _arr[:clip_length]
+        return full[:target_length]
+
+    @staticmethod
+    def _downsample_lossless(
+        arr: npt.ArrayLike, index: int, rate: int
+    ) -> npt.NDArray[Any]:
+        _arr = np.cumsum(arr)
+        _arr = np.pad(_arr, (0, len(_arr) % rate), constant_values=_arr[-1])
+        return inverse_cumsum(_arr[index::rate])
+
+    @staticmethod
+    def _upsample_repeat(
+        arr: npt.ArrayLike, rate: int, target_length: int
+    ) -> npt.NDArray[Any]:
+        return np.repeat(arr, rate)[:target_length]
+
+    def sample_lossy_nth(
+        self,
+        ratio: fractions.Fraction,
+        down_index: int = -1,
+        up_index: int = -1,
     ) -> tuple[xr.DataArray, xr.DataArray]:
         """Keep every `ratio`-th value in the forcing."""
         if ratio >= 1:
             raise ValueError
+        down_index %= ratio.denominator
+        up_index %= ratio.denominator
         _a = self._arr.data
         _t = self._arr.time.data
-        # First, reshape so that the length of a row is `ratio.denominator`
-        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        # The forcing is just every `ratio.denominator`-th index, starting from
+        # `down_index`.
+        frc = self._downsample_lossy(_a, down_index, ratio.denominator)
+        frc_time = self._downsample_lossy(_t, down_index, ratio.denominator)
         # The upsampled version is assumed to be filled with zeros where the
-        # downsampling occurred.
-        reshaped[:, ratio.numerator :] = 0
-        full = reshaped.flatten()[: len(_a)]
+        # downsampling occurred. We add an initial `up_index` number of zeros at the
+        # start to account for downsampling placement.
+        full = self._upsample_nth(frc, up_index, ratio.denominator, len(_a))
         verify_equal_length(full, self._arr)
         down = Wardrobe.dress_a_downsampled(
             "Forcing",
@@ -507,11 +613,41 @@ class SampleStrategyForcing:
         self._create_corresponding_upsampled(full, _t, ratio)
         return down, self.arr
 
-    def keep_every_ratio_nth(
+    def sample_lossy_repeat(
+        self,
+        ratio: fractions.Fraction,
+        down_index: int = -1,
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+        """Keep every `ratio`-th value in the forcing."""
+        if ratio >= 1:
+            raise ValueError
+        if ratio.numerator != 1:
+            raise ValueError
+        down_index %= ratio.denominator
+        _a = self._arr.data
+        _t = self._arr.time.data
+        # The forcing is just every `ratio.denominator`-th index, starting from
+        # `down_index`.
+        frc = self._downsample_lossy(_a, down_index, ratio.denominator)
+        frc_time = self._downsample_lossy(_t, down_index, ratio.denominator)
+        # The upsampled version is just the downsampled with repeated indices.
+        full = self._upsample_repeat(frc, ratio.denominator, len(_a))
+        verify_equal_length(full, self._arr)
+        down = Wardrobe.dress_a_downsampled(
+            "Forcing",
+            frc,
+            frc_time,
+            ratio,
+            desc='Raw "choose every n" downsampling',
+        )
+        self._create_corresponding_upsampled(full, _t, ratio)
+        return down, self.arr
+
+    def sample_lossless_nth(
         self,
         ratio: fractions.Fraction = fractions.Fraction(1, 10),
-        down_index: int = 0,
-        up_index: int = 0,
+        down_index: int = -1,
+        up_index: int = -1,
     ) -> tuple[xr.DataArray, xr.DataArray]:
         """Keep every `ratio`-th value in the forcing, without loss.
 
@@ -527,13 +663,13 @@ class SampleStrategyForcing:
         down_index : int
             When downsampling, we need to deicide where the downsampled point is placed
             (for example, from daily to monthly, is it placed on Jan 1. or Jan 31.). If
-            we let the downsampled index be placed at the first time within a group,
-            the `group_index` would be zero (default). Similarly, if we let the
-            downsampled point be placed at the last element, the `group_index` should
-            be `ratio.denominator - 1`.
+            we let the downsampled index be placed at the first time within a group, the
+            `group_index` would be zero. Similarly, if we let the downsampled point be
+            placed at the last element, the `group_index` would be `-1` (default).
         up_index : int
             When zero-padding during upsampling, this decides if the data point should
-            be at the first index (default) or any other index in the padding region.
+            be at the first index, last index (default) or any other index in the
+            padding region.
 
         Returns
         -------
@@ -555,21 +691,11 @@ class SampleStrategyForcing:
             raise ValueError
         down_index %= ratio.denominator
         up_index %= ratio.denominator
-
-        def _reshape(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
-            _arr = np.asarray(arr)
-            return np.pad(
-                _arr, (0, len(_arr) % ratio.denominator), constant_values=_arr[-1]
-            )
-
-        _a = np.cumsum(self._arr.data)
+        _a = self._arr.data
         _t = self._arr.time.data
-        reshaped = _reshape(_a, ratio).flatten()[down_index :: ratio.denominator]
-        frc_time = _reshape(_t, ratio)[down_index :: ratio.denominator]
-        frc = inverse_cumsum(reshaped)
-        full = np.repeat(reshaped, ratio.denominator)
-        full = np.concatenate((np.zeros(up_index), full))[: len(_a)]
-        full = inverse_cumsum(full)
+        frc = self._downsample_lossless(_a, down_index, ratio.denominator)
+        frc_time = self._downsample_lossy(_t, down_index, ratio.denominator)
+        full = self._upsample_nth(frc, up_index, ratio.denominator, len(_a))
         verify_equal_length(full, self._arr)
         down = Wardrobe.dress_a_downsampled(
             "Forcing",
@@ -581,10 +707,10 @@ class SampleStrategyForcing:
         self._create_corresponding_upsampled(full, _t, ratio)
         return down, self.arr
 
-    def keep_every_ratio_repeat(
+    def sample_lossless_repeat(
         self,
         ratio: fractions.Fraction = fractions.Fraction(1, 10),
-        down_index: int = 0,
+        down_index: int = -1,
     ) -> tuple[xr.DataArray, xr.DataArray]:
         """Keep every `ratio`-th value in the forcing, without loss.
 
@@ -624,76 +750,11 @@ class SampleStrategyForcing:
         if ratio >= 1:
             raise ValueError
         down_index %= ratio.denominator
-
-        def _reshape(arr: npt.ArrayLike, ratio: fractions.Fraction) -> npt.NDArray[Any]:
-            _arr = np.asarray(arr)
-            return np.pad(
-                _arr, (0, len(_arr) % ratio.denominator), constant_values=_arr[-1]
-            )
-
-        _a = np.cumsum(self._arr.data)
+        _a = self._arr.data
         _t = self._arr.time.data
-        _group_idx = down_index
-        reshaped = _reshape(_a, ratio).flatten()[_group_idx :: ratio.denominator]
-        frc_time = _reshape(_t, ratio)[_group_idx :: ratio.denominator]
-        frc = inverse_cumsum(reshaped)
-        full = np.repeat(frc, ratio.denominator)
-        full = full.flatten()[: len(_a)]
-        # full = inverse_cumsum(full)
-        verify_equal_length(full, self._arr)
-        down = Wardrobe.dress_a_downsampled(
-            "Forcing",
-            frc,
-            frc_time,
-            ratio,
-            desc='Raw "choose every n" downsampling',
-        )
-        self._create_corresponding_upsampled(full, _t, ratio)
-        return down, self.arr
-
-    def keep_every_ratio_cumsum(
-        self, ratio: fractions.Fraction = fractions.Fraction(1, 10)
-    ) -> tuple[xr.DataArray, xr.DataArray]:
-        """Keep every `ratio`-th value in the forcing, without loss.
-
-        This procedure effectively pushes an even forward if it happen to be on a sample
-        that would be removed by the downsampling. The `cumsum` method further has the
-        effect of accumulating the magnitude of all missed events within a block.
-
-        Parameters
-        ----------
-        ratio : fractions.Fraction
-            The ratio of kept downsample items per original items.
-
-        Returns
-        -------
-        xr.DataArray
-            The downsampled forcing array.
-        xr.DataArray
-            All the upsampled forcing arrays.
-
-        Raises
-        ------
-        ValueError
-            If the ratio is greater than one.
-        """
-        if ratio >= 1:
-            raise ValueError
-        _a = np.cumsum(self._arr.data)
-        _t = self._arr.time.data
-        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
-        frc = inverse_cumsum(frc)
-        # The upsampled version is assumed to be filled with zeros where the
-        # downsampling occurred.
-        width = 2 * ratio.numerator - reshaped.shape[1]
-        if ratio.numerator == 1:
-            reshaped[:, 1:] = (
-                np.ones_like(reshaped[:, 1:]) * np.atleast_2d(reshaped[:, 0]).T
-            )
-        else:
-            reshaped[:, ratio.numerator :] = reshaped[:, width : ratio.numerator]
-        full = reshaped.flatten()[: len(_a)]
-        full = inverse_cumsum(full)
+        frc = self._downsample_lossless(_a, down_index, ratio.denominator)
+        frc_time = self._downsample_lossy(_t, down_index, ratio.denominator)
+        full = self._upsample_repeat(frc, ratio.denominator, len(_a))
         verify_equal_length(full, self._arr)
         down = Wardrobe.dress_a_downsampled(
             "Forcing",
@@ -794,7 +855,7 @@ class SampleStrategyForcing:
         # plt.grid()
         # plt.show()
         full = butter_lowpass_filter(_a, cutoff=cutoff, fs=fs, order=order).unwrap()
-        frc, frc_time, reshaped = self._sample_at_ratio(_a, _t, ratio)
+        frc, frc_time, _ = self._sample_at_ratio(_a, _t, ratio)
         # fourier = np.fft.rfft(frc)
         # full = np.fft.irfft(fourier, n=len(self._arr.data))
         verify_equal_length(full, self._arr)

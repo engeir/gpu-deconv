@@ -37,9 +37,10 @@ class Plotter:
     @staticmethod
     def _plot_forcing(da: xr.DataArray) -> None:
         for val in da.sample_ratio.data:
+            label = str(fractions.Fraction(val).limit_denominator(1000))
             arr = da.sel(sample_ratio=val)
             ls = "-" if val == 0 else "--"
-            attr = {"color": "k", "label": "Original"} if val == 0 else {"label": val}
+            attr = {"color": "k", "label": "Original"} if val == 0 else {"label": label}
             arr.plot(ls=ls, **attr)  # type: ignore[arg-type]
 
     @staticmethod
@@ -48,18 +49,20 @@ class Plotter:
             da.plot(label="Original", c="k")  # type: ignore[call-arg]
             return
         for val in da.sample_ratio.data:
+            label = fractions.Fraction(val).limit_denominator(1000)
             attr = {"color": "grey"} if val == 0 else {}
             if "iterlist" in da.dims:
                 arr = da.sel(sample_ratio=val).isel(iterlist=-1)
-                arr.plot(label=val, ls="--", **attr)  # type: ignore[arg-type]
+                arr.plot(label=label, ls="--", **attr)  # type: ignore[arg-type]
             else:
-                da.sel(sample_ratio=val).plot(label=val, ls="--", **attr)  # type: ignore[arg-type]
+                da.sel(sample_ratio=val).plot(label=label, ls="--", **attr)  # type: ignore[arg-type]
 
     @staticmethod
     def _plot_err(da: xr.DataArray) -> None:
         for val in da.sample_ratio.data:
+            label = fractions.Fraction(val).limit_denominator(1000)
             arr = da.sel(sample_ratio=val)
-            arr.plot(label=val)  # type: ignore[call-arg]
+            arr.plot(label=label)  # type: ignore[call-arg]
 
     @staticmethod
     @returns.result.safe
@@ -133,7 +136,7 @@ class Plotter:
             if label == var:
                 label = "Original"
             attr = {"color": "k"} if label == "Original" else {}
-            ls = "-" if label == "Original" else ":"
+            ls = "-" if label == "Original" else "--"
             arr.plot(label=label, ls=ls, **attr)  # type: ignore[arg-type]
         [a.legend(loc="upper right") for a in ax]
         [cosmoplots.change_log_axis_base(a) for a in ax]
@@ -143,7 +146,6 @@ class Plotter:
         """Plot all found datasets."""
         for f in self.all_ds:
             self.plot_dataset(f)
-            break
 
 
 def main() -> None:
