@@ -2,7 +2,7 @@
 
 import fractions
 import pathlib
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Sequence
 from typing import Any, Literal
 
 import numpy as np
@@ -12,6 +12,10 @@ import scipy.signal
 import superposedpulses.forcing as pf
 import superposedpulses.point_model as pm
 import xarray as xr
+from rich.console import Console
+from rich.table import Table
+
+from gpu_deconv.plotting.analyse_forcing_sampling import err_as_latex
 
 
 def find_repo_root(path: pathlib.Path | str) -> pathlib.Path:
@@ -25,6 +29,39 @@ def find_repo_root(path: pathlib.Path | str) -> pathlib.Path:
 
 
 ASSETS = find_repo_root(__file__) / "assets"
+
+
+def print_table(  # noqa: PLR0913
+    name: pathlib.Path,
+    var_name: str,
+    var: Sequence[str],
+    error_1: list[float],
+    error_2: list[float],
+    error_3: list[float],
+    error_4: list[float],
+) -> None:
+    """Print values as a latex table."""
+    # Error table
+    table = Table(box=None)
+    table.add_column(rf"\({var_name}\)")
+    table.add_column("& w/ loss, zeros")
+    table.add_column(r"& w/o loss, zeros")
+    table.add_column(r"& w/ loss, repeat")
+    table.add_column(r"& w/o loss, repeat \\")
+    data = [[str(s), None, None, None, None] for s in var]
+    for r, p_ in zip(data, error_1, strict=False):
+        r[1] = "& " + err_as_latex(p_, precision=3, inline_dollar=False)
+    for r, p_ in zip(data, error_2, strict=False):
+        r[2] = "& " + err_as_latex(p_, precision=3, inline_dollar=False)
+    for r, p_ in zip(data, error_3, strict=False):
+        r[3] = "& " + err_as_latex(p_, precision=3, inline_dollar=False)
+    for r, p_ in zip(data, error_4, strict=False):
+        r[4] = "& " + err_as_latex(p_, precision=3, inline_dollar=False) + r" \\"
+    for row in data:
+        table.add_row(*row)
+    with (name.with_suffix(".tex")).open(mode="w") as f:
+        console = Console(file=f, markup=False, width=500)
+        console.print(table)
 
 
 def inverse_cumsum(arr: npt.NDArray[Any]) -> npt.NDArray[Any]:
@@ -190,7 +227,7 @@ class TimeSeriesModel:
                 attrs={
                     "description": "Signal with dynamic noise",
                     "long_name": "Signal",
-                    "epsilon": epsilon_additive,
+                    "epsilon": epsilon_dynamic,
                 },
             )
         if epsilon_additive is not None:
@@ -203,9 +240,21 @@ class TimeSeriesModel:
                 attrs={
                     "description": "Signal with additive noise",
                     "long_name": "Signal",
-                    "epsilon": epsilon_dynamic,
+                    "epsilon": epsilon_additive,
                 },
             )
+        if (
+            epsilon_additive is not None
+            and epsilon_dynamic is not None
+            and epsilon_additive != epsilon_dynamic
+        ):
+            print(
+                "I will only keep track of one epsilon value, with a preference to the additive."
+            )
+        elif epsilon_additive is not None:
+            self.ds.attrs["epsilon"] = epsilon_additive
+        elif epsilon_dynamic is not None:
+            self.ds.attrs["epsilon"] = epsilon_dynamic
         return self.ds
 
     def _create_model(self) -> None:
@@ -310,7 +359,7 @@ class TimeSeriesModel:
     def _add_noise(
         self, epsilon: float, version: Literal["additive", "dynamic"]
     ) -> npt.NDArray[Any]:
-        self._model.add_noise(epsilon, noise_type=version)
+        self._model.add_noise(epsilon, noise_type=version, seed=self._seed)
         return self._reuse_realization()
 
     def _reuse_realization(self) -> npt.NDArray[Any]:
@@ -384,7 +433,7 @@ class Wardrobe:
         desc: str | None = None,
     ) -> xr.DataArray:
         """Dress an upsampled array named `name` with a time dimension."""
-        _a = {"long_name": f"{name}, dense", "sample_factor": ratio}
+        _a = {"long_name": f"{name}, dense", "sample_factor": str(ratio)}
         if desc is not None:
             _a.update({"description": desc})
         return xr.DataArray(
@@ -579,7 +628,10 @@ class SampleStrategyForcing:
     def _upsample_repeat(
         arr: npt.ArrayLike, rate: int, target_length: int
     ) -> npt.NDArray[Any]:
-        return np.repeat(arr, rate)[:target_length]
+        _arr = np.repeat(arr, rate)
+        while not len(out := _arr[:target_length]) % 2:
+            _arr = np.pad(_arr, (0, 1), constant_values=_arr[-1])
+        return out
 
     def sample_lossy_nth(
         self,

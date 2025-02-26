@@ -3,4 +3,4 @@ legend.framealpha: 0.5
 keymap.quit_all: Q
 text.latex.preamble: \usepackage{amsmath}
 lines.linewidth: 1.25
-legend.handlelength: 1.25
+legend.handlelength: 2.48 # In font-size units (8). 2.5 cover 32 pts

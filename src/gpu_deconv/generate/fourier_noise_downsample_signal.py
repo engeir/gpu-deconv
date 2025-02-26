@@ -71,7 +71,7 @@ for epsilon in epsilon_list:
             dims=["time_sparse"],
             coords={
                 "time_sparse": (
-                    "time_array",
+                    "time_sparse",
                     time_array.data[::downsample_factor],
                     {"long_name": "Time", "units": r"$\tau_d$"},
                 )

@@ -7,9 +7,10 @@ dependencies = [
   "xarray>=2024.9.0,<2025",
   "matplotlib>=3.9,<4",
   "numpy<2",
-  "plastik>=0.7.2,<0.8",
+  "plastik>=0.8.5,<0.9",
   "returns[compatible-mypy]>=0.21.0,<0.22",
   "cosmoplots>=0.4.3,<0.5",
+  "rich>=13.9.4,<14",
 ]
 
 [project.optional-dependencies]
@@ -18,7 +19,7 @@ dev = [
   "pre-commit-hooks>=4.6.0,<5",
   "pydoclint>=0.5.9,<0.6",
   "pydocstringformatter>=0.7.3,<0.8",
-  "ruff",
+  "ruff>=0.9.7,<0.10",
   "pytest>=8.3.3,<9",
   "mypy>=1.12.0,<2",
 ]

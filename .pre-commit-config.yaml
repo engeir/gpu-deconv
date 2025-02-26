@@ -29,7 +29,7 @@ repos:
         name: Ruff lint
         stages: [commit]
         language: system
-        entry: pixi run ruff check
+        entry: pixi run ruff check --fix
         types: [python]
       - id: pydocstringformatter
         name: pydocstringformatter

@@ -5,6 +5,8 @@ The upsampling is done by repetition, downsampled data is by choosing every `n`.
 
 # IMPORTANT: This script has been verified against Sajidah's output.
 
+import fractions
+
 import cupy as cp
 import fppanalysis.deconvolution_methods as dec
 import numpy as np
@@ -55,13 +57,13 @@ for eps in eps_list:
             "Signal",
             signal_add_downsampled.data,
             time_array.data[::downsample_factor],
-            factor=downsample_factor,
+            ratio=fractions.Fraction(1, downsample_factor),
         )
         ds["signal_dynamic_downsampled"] = utils.Wardrobe.dress_a_downsampled(
             "Signal",
             signal_dyn_downsampled.data,
             time_array.data[::downsample_factor],
-            factor=downsample_factor,
+            ratio=fractions.Fraction(1, downsample_factor),
         )
 
         # Apply constant method - repeat values
@@ -81,13 +83,13 @@ for eps in eps_list:
             "Signal",
             signal_add_downsampled_upsampled,
             time_array,
-            factor=downsample_factor,
+            ratio=fractions.Fraction(1, downsample_factor),
         )
         ds["signal_dynamic_downsampled_upsampled"] = utils.Wardrobe.dress_an_upsampled(
             "Signal",
             signal_dyn_downsampled_upsampled,
             time_array,
-            factor=downsample_factor,
+            ratio=fractions.Fraction(1, downsample_factor),
         )
 
         signal_add_downsampled_upsampled = cp.array(signal_add_downsampled_upsampled)

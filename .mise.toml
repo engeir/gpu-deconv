@@ -1,5 +1,6 @@
 [env]
 '_'.python.venv.path = "./.pixi/envs/default/"
-DISPLAY = "localhost:10.0"
+DISPLAY = "localhost:12.0" # If run in tmux, make sure this is the same as outside tmux
 MPLBACKEND = "TkAgg"
 LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu/"
+PYTHONIOENCODING = "utf-8"
