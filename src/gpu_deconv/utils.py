@@ -420,8 +420,8 @@ class TimeSeriesModel:
             self._model._times - pulse_params.arrival_time,  # noqa: SLF001
             pulse_params.duration,
         )
-        # FIXME:error prone - what if the shape starts with a rise?
-        # pulse_max = np.argmax(pulse_shape)
+        # NOTE: might be error prone. The start of the signal is defined to be at the
+        # first non-zero value.
         pulse_first_nonzero = np.argwhere(pulse_shape)[0]
         half = len(pulse_shape) // 2
         roll = half - pulse_first_nonzero
