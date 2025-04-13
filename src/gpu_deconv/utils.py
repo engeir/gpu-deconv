@@ -2,6 +2,7 @@
 
 import fractions
 import pathlib
+import warnings
 from collections.abc import Callable, Generator, Sequence
 from typing import Any, Literal
 
@@ -11,6 +12,7 @@ import returns.maybe
 import scipy.signal
 import superposedpulses.forcing as pf
 import superposedpulses.point_model as pm
+import superposedpulses.pulse_shape as ps_store
 import xarray as xr
 from rich.console import Console
 from rich.table import Table
@@ -141,6 +143,128 @@ def verify_equal_length(*signals: npt.NDArray[Any] | xr.DataArray) -> None:
         raise UnequalArrayLengthError
 
 
+class LomaxShortPulseGenerator(ps_store.ShortPulseGenerator):  # type: ignore[misc]
+    r"""Lomax pulse generator.
+
+    The length of the returned array is dynamically set to be the shortest to reach a
+    pulse value under the given tolerance. That is, if the pulse shape is :math:`p(t)`,
+    the returned array will be :math:`p(t)` with :math:`t` in :math:`[0, T]` such that
+    :math:`p(0), p(T) < tolerance`.
+
+    A ``max_cutoff`` is provided to avoid returning pulse arrays of arbitrarily long
+    lengths.
+
+    Parameters
+    ----------
+    lam : float
+        Asymmetry parameter, defaults to 0 (exponential pulse shape).
+    tolerance : float
+        Maximum error when cutting the pulse.
+    max_cutoff : float
+        The maximum cut-off.
+
+    Notes
+    -----
+    The implementation follow that of `Wikipedia
+    <https://en.wikipedia.org/wiki/Lomax_distribution#Probability_density_function>`_.
+
+    .. math::
+
+        p(\tau)=\frac{\alpha}{\lambda}\left(1+\frac{x}{\lambda}\right)^{-(\alpha+1)}
+    """
+
+    def __init__(
+        self, lam: float = 0, tolerance: float = 1e-50, max_cutoff: float = 1e50
+    ) -> None:
+        super().__init__(tolerance)
+        self._max_cutoff = max_cutoff
+        self.lam = lam
+
+    def get_pulse(self, times: np.ndarray, duration: float) -> np.ndarray:
+        kern = np.zeros(len(times))
+        if self.lam == 0:
+            kern[times >= 0] = np.exp(-times[times >= 0] / duration)
+            return kern
+        kern[times >= 0] = np.exp(-times[times >= 0] / (duration * (1 - self.lam)))
+        kern[times < 0] = np.exp(times[times < 0] / (duration * self.lam))
+        return kern
+
+    def get_cutoff(self, duration: float) -> float:
+        cutoff = -duration * np.log(self.tolerance)
+        return float(min(cutoff, self._max_cutoff))
+
+
+class StandardPulseGenerator(ps_store.PulseGenerator):  # type: ignore[misc]
+    """Generates all pulse shapes previously supported.
+
+    Parameters
+    ----------
+    shape_name : str
+        Should be one of StandardPulseShapeGenerator.__SHAPE_NAMES__
+    kwargs : Any
+        Additional arguments to be passed to special shapes:
+        - "2-exp":
+        - "lam" parameter for the asymmetry parameter
+    """
+
+    __SHAPE_NAMES__ = ("lomax", "gamma")
+
+    def __init__(self, shape_name: str = "lomax", **kwargs: Any) -> None:  # noqa: ANN401
+        assert shape_name in StandardPulseGenerator.__SHAPE_NAMES__, (
+            "Invalid shape_name"
+        )
+        self._shape_name: str = shape_name
+        self._kwargs = kwargs
+
+    def get_pulse(
+        self, times: np.ndarray, duration: float, tolerance: float = 1e-5
+    ) -> np.ndarray:
+        kern = self._get_generator(self._shape_name)(times, duration, self._kwargs)
+        err = max(np.abs(kern[0]), np.abs(kern[-1]))
+        if err > tolerance:
+            warnings.warn(
+                "Value at end point of kernel > tol, end effects may occur.",
+                stacklevel=2,
+            )
+        return kern
+
+    @staticmethod
+    def _get_generator(
+        shape_name: str,
+    ) -> Callable[[np.ndarray, float, dict[Any, Any]], np.ndarray]:
+        if shape_name == "lomax":
+            return StandardPulseGenerator._get_lomax_shape
+        if shape_name == "gamma":
+            return StandardPulseGenerator._get_gamma_shape
+        raise ValueError
+
+    @staticmethod
+    def _get_lomax_shape(times: np.ndarray, duration: float, kwargs: Any) -> np.ndarray:
+        kern = np.zeros(len(times))
+        lambda_ = kwargs["lambda"]
+        alpha = kwargs["alpha"]
+        ts = times / duration
+        m = times >= 0
+        kern[m] = alpha / lambda_ * (1 + ts[m] / lambda_) ** (-(alpha + 1))
+        return np.asarray(kern / kern.max())
+
+    @staticmethod
+    def _get_gamma_shape(times: np.ndarray, duration: float, kwargs: Any) -> np.ndarray:
+        kern = np.zeros(len(times))
+        shape = kwargs["shape"]
+        scale = kwargs["scale"]
+        ts = times / duration
+        m = times >= 0
+        kern[m] = scipy.stats.gamma.pdf(ts[m], shape, scale=scale)
+        return np.asarray(kern / kern.max())
+
+
+lomax_pulse_generator = StandardPulseGenerator(
+    shape_name="lomax", **{"alpha": 1 / 10, "lambda": 1}
+)
+gamma_pulse_generator = StandardPulseGenerator(shape_name="gamma", scale=1.5, shape=1.5)
+
+
 class RandomStateForcingGenerator(pf.ForcingGenerator):  # type: ignore[misc]
     """Generates a standard forcing, with uniformly distributed arrival times.
 
@@ -203,6 +327,7 @@ class TimeSeriesModel:
         self._total_pulses = int(1e3) if total_pulses is None else total_pulses
         self._gamma = 1e-1 if gamma is None else gamma
         self._dt = 1e-2 if dt is None else dt
+        self._ps: ps_store.PulseGenerator | None = None
 
     def __call__(
         self,
@@ -212,9 +337,15 @@ class TimeSeriesModel:
         *,
         epsilon_dynamic: float | None = None,
         epsilon_additive: float | None = None,
+        ps: ps_store.PulseGenerator | None = None,
     ) -> xr.Dataset:
         """Create a dataset containing all deconvolution relevant time series."""
-        self._total_pulses, self._gamma, self._dt = total_pulses, gamma, dt
+        self._total_pulses, self._gamma, self._dt, self._ps = (
+            total_pulses,
+            gamma,
+            dt,
+            ps,
+        )
         self._create_model()
         _signal = len(self.ds["signal"].data)
         if epsilon_dynamic is not None:
@@ -263,6 +394,8 @@ class TimeSeriesModel:
             total_duration=self._total_pulses / self._gamma,
             dt=self._dt,
         )
+        if self._ps is not None:
+            self._model.set_pulse_shape(self._ps)
         if self._seed is not None:
             self._model.set_custom_forcing_generator(
                 RandomStateForcingGenerator(self._seed)
@@ -287,9 +420,11 @@ class TimeSeriesModel:
             self._model._times - pulse_params.arrival_time,  # noqa: SLF001
             pulse_params.duration,
         )
-        pulse_max = np.argmax(pulse_shape)
+        # FIXME:error prone - what if the shape starts with a rise?
+        # pulse_max = np.argmax(pulse_shape)
+        pulse_first_nonzero = np.argwhere(pulse_shape)[0]
         half = len(pulse_shape) // 2
-        roll = half - pulse_max
+        roll = half - pulse_first_nonzero
         pulse_shape = np.roll(pulse_shape, roll)
         tau = time_array
         if tau[0] != -tau[-1]:

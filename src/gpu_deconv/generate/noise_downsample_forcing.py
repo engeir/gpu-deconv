@@ -9,6 +9,7 @@ import fppanalysis.deconvolution_methods as dec
 import matplotlib.pyplot as plt
 import numpy as np
 import plastik
+import superposedpulses.pulse_shape as ps_store
 import xarray as xr
 from icecream import ic
 
@@ -30,6 +31,17 @@ savedata = utils.ASSETS / "noise_downsampled_forcing"
 savedata.mkdir(parents=False, exist_ok=True)
 
 
+def _find_pulse_shape(ps: str) -> ps_store.PulseGenerator | None:
+    match ps:
+        case "exp":
+            return None
+        case "lomax":
+            return utils.lomax_pulse_generator
+        case "gamma":
+            return utils.gamma_pulse_generator
+    raise ValueError
+
+
 def noisy_exp(
     strategy: str,
     noise: Literal["additive", "dynamic"],
@@ -38,13 +50,14 @@ def noisy_exp(
     gamma: float,
     epsilon: float,
     guess: str = "heaviside",
+    ps: str = "exp",
 ) -> pathlib.Path:
     """Create an experiment containing noise."""
     print(f"Generate signal for {gamma = }")
 
     total_pulses = int(total_samples * gamma * dt)
     ic(total_pulses)
-    kwargs = {f"epsilon_{noise}": epsilon}
+    kwargs = {f"epsilon_{noise}": epsilon, "ps": _find_pulse_shape(ps)}
     ds = utils.TimeSeriesModel(seed)(
         total_pulses=total_pulses,
         gamma=gamma,
@@ -109,9 +122,9 @@ def noisy_exp(
     epsilon_str = str(epsilon).replace(".", "")
     fname = f"{strategy}-gamma_{gamma_str}-epsilon_{epsilon_str}-{guess}-{noise}"
 
-    ds.to_netcdf(f"{savedata / fname}.nc", format="NETCDF4")
+    ds.to_netcdf(f"{savedata / ps / fname}.nc", format="NETCDF4")
     fname_ext = fname + ".nc"
-    return savedata / fname_ext
+    return savedata / ps / fname_ext
 
 
 def plot_wrap(
@@ -141,9 +154,9 @@ def plot_wrap(
         ax.set_title("")
         ax.set_xlim((-1.5, 15))
     fname = "-".join(p1.stem.split("-")[1:])
-    fig.savefig(savedata / "plt" / fname)
+    fig.savefig(savedata / "plt" / p1.parent.parts[-1] / fname)
     utils.print_table(
-        savedata / "plt" / fname,
+        savedata / "plt" / p1.parent.parts[-1] / fname,
         "r",
         [r"\(1\)", r"\(1/2\)", r"\(1/5\)", r"\(1/10\)", r"\(1/24\)"],
         *errors,
@@ -153,7 +166,11 @@ def plot_wrap(
 
 
 def make_plot(
-    noise: Literal["additive", "dynamic"], gamma: float, epsilon: float, guess: str
+    noise: Literal["additive", "dynamic"],
+    gamma: float,
+    epsilon: float,
+    guess: str,
+    ps: str,
 ) -> None:
     """Easily make a plot of standard experiments."""
     lsn = "lossy_nth"
@@ -162,53 +179,59 @@ def make_plot(
     llr = "lossless_repeat"
     plot_wrap(
         *[
-            noisy_exp(lsn, noise, gamma=gamma, epsilon=epsilon, guess=guess),
-            noisy_exp(lln, noise, gamma=gamma, epsilon=epsilon, guess=guess),
-            noisy_exp(lsr, noise, gamma=gamma, epsilon=epsilon, guess=guess),
-            noisy_exp(llr, noise, gamma=gamma, epsilon=epsilon, guess=guess),
+            noisy_exp(lsn, noise, gamma=gamma, epsilon=epsilon, guess=guess, ps=ps),
+            noisy_exp(lln, noise, gamma=gamma, epsilon=epsilon, guess=guess, ps=ps),
+            noisy_exp(lsr, noise, gamma=gamma, epsilon=epsilon, guess=guess, ps=ps),
+            noisy_exp(llr, noise, gamma=gamma, epsilon=epsilon, guess=guess, ps=ps),
         ]
     )
 
 
-def main() -> None:
+def _ps_run(ps: str) -> None:
     """Run the main program."""
-    make_plot("additive", gamma=1e-1, epsilon=1e-1, guess="heaviside")
-    make_plot("additive", gamma=1e-1, epsilon=1, guess="heaviside")
-    make_plot("additive", gamma=1e-1, epsilon=2, guess="heaviside")
-    make_plot("additive", gamma=1, epsilon=1e-1, guess="heaviside")
-    make_plot("additive", gamma=1, epsilon=1, guess="heaviside")
-    make_plot("additive", gamma=1, epsilon=2, guess="heaviside")
-    make_plot("additive", gamma=10, epsilon=1e-1, guess="heaviside")
-    make_plot("additive", gamma=10, epsilon=1, guess="heaviside")
-    make_plot("additive", gamma=10, epsilon=2, guess="heaviside")
-    make_plot("additive", gamma=1e-1, epsilon=1e-1, guess="boxcar")
-    make_plot("additive", gamma=1e-1, epsilon=1, guess="boxcar")
-    make_plot("additive", gamma=1e-1, epsilon=2, guess="boxcar")
-    make_plot("additive", gamma=1, epsilon=1e-1, guess="boxcar")
-    make_plot("additive", gamma=1, epsilon=1, guess="boxcar")
-    make_plot("additive", gamma=1, epsilon=2, guess="boxcar")
-    make_plot("additive", gamma=10, epsilon=1e-1, guess="boxcar")
-    make_plot("additive", gamma=10, epsilon=1, guess="boxcar")
-    make_plot("additive", gamma=10, epsilon=2, guess="boxcar")
-    make_plot("dynamic", gamma=1e-1, epsilon=1e-1, guess="heaviside")
-    make_plot("dynamic", gamma=1e-1, epsilon=1, guess="heaviside")
-    make_plot("dynamic", gamma=1e-1, epsilon=2, guess="heaviside")
-    make_plot("dynamic", gamma=1, epsilon=1e-1, guess="heaviside")
-    make_plot("dynamic", gamma=1, epsilon=1, guess="heaviside")
-    make_plot("dynamic", gamma=1, epsilon=2, guess="heaviside")
-    make_plot("dynamic", gamma=10, epsilon=1e-1, guess="heaviside")
-    make_plot("dynamic", gamma=10, epsilon=1, guess="heaviside")
-    make_plot("dynamic", gamma=10, epsilon=2, guess="heaviside")
-    make_plot("dynamic", gamma=1e-1, epsilon=1e-1, guess="boxcar")
-    make_plot("dynamic", gamma=1e-1, epsilon=1, guess="boxcar")
-    make_plot("dynamic", gamma=1e-1, epsilon=2, guess="boxcar")
-    make_plot("dynamic", gamma=1, epsilon=1e-1, guess="boxcar")
-    make_plot("dynamic", gamma=1, epsilon=1, guess="boxcar")
-    make_plot("dynamic", gamma=1, epsilon=2, guess="boxcar")
-    make_plot("dynamic", gamma=10, epsilon=1e-1, guess="boxcar")
-    make_plot("dynamic", gamma=10, epsilon=1, guess="boxcar")
-    make_plot("dynamic", gamma=10, epsilon=2, guess="boxcar")
+    make_plot("additive", gamma=1e-1, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1e-1, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1e-1, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=10, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=10, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=10, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("additive", gamma=1e-1, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=1e-1, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=1e-1, epsilon=2, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=1, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=1, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=1, epsilon=2, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=10, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=10, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("additive", gamma=10, epsilon=2, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=1e-1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=1, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=2, guess="heaviside", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1e-1, epsilon=2, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=1, epsilon=2, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=1e-1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=1, guess="boxcar", ps=ps)
+    make_plot("dynamic", gamma=10, epsilon=2, guess="boxcar", ps=ps)
+
+
+def _main() -> None:
+    _ps_run("exp")
+    _ps_run("gamma")
+    _ps_run("lomax")
 
 
 if __name__ == "__main__":
-    main()
+    _main()
